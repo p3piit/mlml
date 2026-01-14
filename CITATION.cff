@@ -1,0 +1,10 @@
+cff-version: 1.1.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Colussi"
+  given-names: "Paolo"
+orcid: "https://orcid.org/0009-0009-7048-7559"
+title: "p3piit/mlml: Version 0.1.0"
+doi: 10.5281/zenodo.18247170
+version: v0.1.0
+date-released: 2026-01-14
