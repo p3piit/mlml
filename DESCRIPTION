@@ -1,0 +1,33 @@
+Package: mlml
+Type: Package
+Title: Utilities functions for my master thesis on multilevel machine learning
+Version: 0.1.0
+Author: Paolo Colussi
+Maintainer: Paolo Colussi <p.colussi@uu.nl>
+Description: Implements utility functions developed for a master thesis on multilevel machine learning.
+    The package provides implementations of Generalized Mixed-Effects Regression Trees (GMERT)
+    and Generalized Mixed-Effects Random Forests (GMERF), including optimized variants based on
+    precomputed cluster-level matrix inverses. It also includes tools for simulating clustered
+    binary data under logistic mixed-effects models, performing cluster-wise train/test splits,
+    generating predictions from fitted models, and computing classification performance metrics
+    such as class-specific F1 scores. These methods are designed for hierarchical data structures
+    commonly encountered in applied statistical and machine learning research.
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
+Imports:
+    tidyverse,
+    rpart,
+    MASS,
+    lme4,
+    parallel,
+    ggplot2,
+    ranger,
+    performance,
+    stats,
+    utils
+Suggests: 
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
