@@ -27,13 +27,6 @@ This package serves three main goals:
 3. **Provide a single entry point** that loads all required tools for multilevel ML  
 
 I use **mlml** as a *personal research toolbox* during my thesis work.
-
-This:
-
-- Loads all required dependencies  
-- Gives access to all model-fitting functions  
-- Ensures reproducibility through `renv`  
-
 Instead of loading many packages manually, I rely on **mlml** to centralize everything. I know that usually is bad 
 practice to import whole libraries and not single functions in a package, but in this way I'll get all the packages
 that I need with only one line of code
