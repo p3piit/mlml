@@ -43,7 +43,7 @@ A data.frame with columns \code{id}, \code{y}, \code{x1}, \code{x2},
 and \code{x3}.
 }
 \description{
-Generates synthetic clustered data from a classic logistic mixed-effects model
+Generates synthetic clustered data from a logistic mixed-effects model
 with random intercepts and random slopes. The simulated dataset is suitable
 for fitting and testing generalized mixed effects regression tree (GMERT)
 models.
