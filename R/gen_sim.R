@@ -52,7 +52,7 @@
 #'
 #' @importFrom MASS mvrnorm
 #' @export
-generate_mixed_sim <- function(
+gen_sim <- function(
   n = 1000,
   n_groups = 20,
   n_vars = 10,
