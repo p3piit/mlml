@@ -134,7 +134,6 @@ gen_sim <- function(
   # draw group-level random effects (rows = groups, cols = intercept + slopes)
   re_draws <- MASS::mvrnorm(n = n_groups, mu = rep(0, re_dim), Sigma = Sigma_re)
   colnames(re_draws) <- c("(Intercept)", paste0("bX", random_vars))
-  rownames(re_draws) <- paste0("G", seq_len(n_groups))
   # build response
   fixed_part <- as.vector(Xmat %*% beta) + intercept
   rand_contrib <- numeric(n)
@@ -149,8 +148,7 @@ gen_sim <- function(
   eps <- stats::rnorm(n, mean = 0, sd = sigma)
   y <-  fixed_part + intercept_part + rand_contrib + eps
   df <- data.frame(
-    id = seq_len(n),
-    group = factor(paste0("G", groups)),
+    id = factor(groups),
     y = y,
     Xmat,
     stringsAsFactors = FALSE

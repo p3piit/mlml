@@ -17,7 +17,7 @@ fit_gmerf_opt <- function(df,               # df: data.frame with columns
                             random_effects = "x1",  # random effects design column names (intercept + slope on x1)
                             max_iter_inn = 1000,  # maximum number of EM iterations (inner loop)
                             max_iter_out = 1000,  # maximum number of PQL iterations (outer loop)
-                            tol = 1e-6,           # convergence tolerance for both loops (Aitken or relative diff)
+                            tol = 1e-4,           # convergence tolerance for both loops (Aitken or relative diff)
                             ntrees = 500,        # RF: number of trees
                             mtry   = NULL,       # RF: features tried at each split (default = floor(p/3) if NULL)
                             min_node_size = 5,   # RF: terminal node size
@@ -74,7 +74,7 @@ fit_gmerf_opt <- function(df,               # df: data.frame with columns
   sigma2 <- 1                                   # initial residual variance
   D <- diag(q)                                  # initial random-effects covariance (identity)
   b <- matrix(0, G, q)                          # initialize cluster random effects
-  gll <- c(0, 0)                                # GLL storage (2 slots for Aitken acceleration)
+  gll <- c(0)                                # GLL storage (2 slots for Aitken acceleration)
   eta_old <- rep(0, N)                          # previous eta for outer-loop convergence check
   converged_in <- c()                           # inner-loop convergence flags (per outer iteration)
   converged_out <- FALSE                        # outer-loop convergence flag
@@ -145,10 +145,10 @@ fit_gmerf_opt <- function(df,               # df: data.frame with columns
       D <- D_fun_small(G = G, b = b, Ainv = Ainv)
 
       # --- Inner-loop convergence check (GLL stabilization) ---
-      gll[m + 2] <- gll_fun(D = D, b = b, idx = idx_by_cluster,
+      gll[m + 1] <- gll_fun(D = D, b = b, idx = idx_by_cluster,
                             Z = Z, y = y_t, fhat = fhat, s2 = sigma2, w = w)
       if (m > 1L) {
-        rel <- abs(gll[m + 2] - gll[m + 1]) / (abs(gll[m + 1]) + 1e-12)
+        rel <- abs(gll[m + 1] - gll[m]) / (abs(gll[m]) + 1e-12)
         if (rel < tol) { n_iter <- m; converged_in_t <- TRUE; break }
       }
 
@@ -184,11 +184,12 @@ fit_gmerf_opt <- function(df,               # df: data.frame with columns
 
     # Update working quantities for next outer iteration
     eta_old <- eta
-    mu <- exp(eta) / (1 + exp(eta))             # updated conditional means
+    mu <- pmin(pmax(plogis(eta), 10e-15), 1 - 1e-15)            # updated conditional means (capped below 1)
     y_t <- log(mu / (1 - mu)) + (y - mu) / (mu * (1 - mu))  # new pseudo-response
     w <- mu * (1 - mu)                          # new working weights
 
     M <- M + 1L
+    gll <- c(0)                                # reset GLL storage for next inner loop
     if (M >= max_iter_out) {                    # guard against outer non-convergence
       converged_out <- FALSE
       message(sprintf("WARNING: the PQL algorithm did not converge in %d iterations.", max_iter_out))

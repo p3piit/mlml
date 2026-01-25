@@ -1,4 +1,4 @@
-# sigma_fun_Ainv: updates residual variance sigma2 using precomputed A_i^{-1}
+# sigma_fun_small: updates residual variance sigma2 using precomputed A_i^{-1}
 #'
 #' Update residual variance using precomputed \eqn{A_i^{-1}}
 #'

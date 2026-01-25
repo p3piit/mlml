@@ -199,7 +199,7 @@ fit_gmerf_small    <- function(df,               # df: data.frame with columns
 
     # Update working quantities for next outer iteration
     eta_old <- eta
-    mu <- exp(eta) / (1 + exp(eta))             # updated conditional means
+    mu <- pmin(pmax(plogis(eta), 10e-15), 1 - 1e-15)            # updated conditional means (capped below 1)
     y_t <- log(mu / (1 - mu)) + (y - mu) / (mu * (1 - mu))  # new pseudo-response
     w <- mu * (1 - mu)                          # new working weights
 
