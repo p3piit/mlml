@@ -91,7 +91,7 @@ gen_sim <- function(
   Sigma <- matrix(rho, n_vars, n_vars)
   diag(Sigma) <- 1
   Xmat <- MASS::mvrnorm(n = n, mu = mu, Sigma = Sigma)
-  colnames(Xmat) <- paste0("X", seq_len(n_vars))
+  colnames(Xmat) <- paste0("x", seq_len(n_vars))
   # fixed-effect coefficients
   if (is.null(beta)) {
     beta <- stats::rnorm(n_vars, mean = 0, sd = 1)
