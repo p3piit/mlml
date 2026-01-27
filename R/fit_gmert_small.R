@@ -26,6 +26,10 @@
 #' @param minbucket Integer. Minimum number of observations in any terminal node.
 #' @param maxdepth Integer. Maximum depth of the fitted tree.
 #' @param xval Integer. Number of cross-validation folds in \code{rpart}.
+#' @param save_tree Logical. Whether to save the full \code{rpart} tree object in the output.
+#' @param save_gll Logical. Whether to save the generalized log-likelihood trace.
+#' @param save_train_ids Logical. Whether to save the training cluster IDs.
+#' @param sanity_checks Logical. Whether to print sanity check messages during fitting.
 #'
 #' @return A list with components:
 #' \describe{
@@ -60,6 +64,7 @@
 #' @import parallel
 #' @import ggplot2
 #' @import performance
+#' @import data.table
 #'
 #' @export
 #'
@@ -84,7 +89,11 @@ fit_gmert_small    <- function(df,               # df: data.frame with columns
                                minsplit = 50,        # minimum number of obs required to attempt a split
                                minbucket = 20,       # minimum number of obs in any terminal node
                                maxdepth = 5,         # maximum tree depth
-                               xval = 10             # number of cross-validation folds in rpart
+                               xval = 10,            # number of cross-validation folds in rpart
+                               save_tree = FALSE,    # whether to save the full tree object
+                               save_gll = FALSE,       # whether to save the GLL trace
+                               save_train_ids = FALSE, # whether to save the training cluster IDs
+                               sanity_checks = FALSE   # whether to print sanity check messages during fitting
 ) {
 
   # --- Basic setup ---
@@ -104,11 +113,14 @@ fit_gmert_small    <- function(df,               # df: data.frame with columns
   sigma2 <- 1                                   # initial residual variance
   D <- diag(q)                                  # initial random-effects covariance (identity)
   b <- matrix(0, G, q)                          # initialize cluster random effects
-  gll <- c(0, 0)                                # GLL storage (2 slots for Aitken acceleration)
+  gll <- c(0   )                                # GLL storage (2 slots for Aitken acceleration)
   eta_old <- rep(0, N)                          # previous eta for outer-loop convergence check
   converged_in <- c()                           # inner-loop convergence flags (per outer iteration)
   converged_out <- FALSE                        # outer-loop convergence flag
-  time_start <- proc.time()                  # start timer
+  Xdf <- data.table::as.data.table(
+        df[setdiff(names(df), c(id, target))])
+  
+  time_start <- proc.time()                        # start timer
 
   # --- Outer loop (PQL updates) ---
   repeat {
@@ -127,13 +139,22 @@ fit_gmert_small    <- function(df,               # df: data.frame with columns
       y_star <- y_t - zb                        # adjusted response for tree fit
 
       # (1.ii) M-step: fit regression tree for fixed effects f(X)
-      ctrl <- rpart.control(cp = cp, minsplit = minsplit, xval = xval,
-                            minbucket = minbucket, maxdepth = maxdepth)
-      Xdf <- df[setdiff(names(df), c(id, target))]
+      ctrl <- rpart.control(cp = cp, 
+                            minsplit = minsplit, 
+                            xval = xval,
+                            minbucket = minbucket, 
+                            maxdepth = maxdepth)
+      Xdf <- Xdf[, y_star := y_star]
       tree <- rpart(y_star ~ .,
-                    data = cbind(y_star = y_star, Xdf),
-                    weights = w, method = "anova", control = ctrl)
+                    data = Xdf_tree,
+                    weights = w, 
+                    method = "anova", 
+                    control = ctrl)
       fhat <- as.numeric(predict(tree, newdata = Xdf))
+      
+      if (!save_tree) {
+        rm(tree)
+      }
 
       # (1.iii) Update random effects b_i
       Ainv <- Ajnv_fun(Z = Z, D = D, sigma2 = sigma2, G = G, idx = idx_by_cluster, w = w)  # build V_i per cluster
@@ -149,10 +170,10 @@ fit_gmert_small    <- function(df,               # df: data.frame with columns
       D <- D_fun_small(G = G, b = b, Ainv = Ainv)
 
       # --- Inner-loop convergence check (GLL stabilization) ---
-      gll[m + 2] <- gll_fun(D = D, b = b, idx = idx_by_cluster,
+      gll[m + 1] <- gll_fun(D = D, b = b, idx = idx_by_cluster,
                             Z = Z, y = y_t, fhat = fhat, s2 = sigma2, w = w)
       if (m > 1L) {
-        rel <- abs(gll[m + 2] - gll[m + 1]) / (abs(gll[m + 1]) + 1e-12)
+        rel <- abs(gll[m + 1] - gll[m]) / (abs(gll[m]) + 1e-12)
         if (rel < tol) { n_iter <- m; converged_in_t <- TRUE; break }
       }
 
@@ -192,26 +213,45 @@ fit_gmert_small    <- function(df,               # df: data.frame with columns
       message(sprintf("WARNING: the PQL algorithm did not converge in %d iterations.", max_iter_out))
       break
     }
+
+    if (M %% 10 == 0 & sanity_checks) {
+      time_elapsed <- proc.time() - time_start
+      message(sprintf("Outer iteration %d: elapsed time = %.2f sec, d_eta = %.6f. \n",
+                      M, time_elapsed["elapsed"], d_eta))
+    }
   }
 
-  # --- Stop timer and compute elapsed time ---
-  time_end <- proc.time()
-  elapsed <- as.numeric((time_end - time_start)["elapsed"])   # total runtime in seconds
-
-
-  # --- Return fitted components ---
-  list(
-    tree = tree,                   # fitted rpart tree (fixed-effects function f(X))
-    b = b,                         # estimated random effects (G x q)
-    D = D,                         # estimated random-effects covariance
-    sigma2 = sigma2,               # estimated residual variance
-    mu = mu,                       # conditional means
-    converged_in = converged_in,   # convergence flags for inner loops
-    converged_out = converged_out, # convergence flag for outer loop
-    n_iter = n_iter,               # iterations performed (inner loop)
-    train_ids = df$id,             # cluster identifiers in training set
-    gll = gll,                     # GLL trace (for diagnostics)
-    tol = tol,                     # convergence tolerance used
-    time = elapsed                 # total runtime (seconds)
+  time_elapsed <- proc.time() - time_start
+  time_elapsed_min <- time_elapsed["elapsed"] / 60
+  time_elapsed_hours <- time_elapsed_min / 60
+  message(sprintf("Total elapsed time: %.2f sec (%.0f min, %.0f hours). \n",
+                  time_elapsed["elapsed"], time_elapsed_min, time_elapsed_hours))
+  
+  out <- list(
+    # include fitted forest only if explicitly requested and rf exists
+    b = b,
+    D = D,
+    sigma2 = sigma2,
+    mu = mu,
+    converged_in = converged_in,
+    converged_out = converged_out,
+    n_iter = n_iter,
+    tol = tol
   )
+  if (save_tree) {
+    out$tree <- tree
+  }
+
+  if (save_gll) {
+    out$gll <- gll
+  }
+
+  if (save_train_ids) {
+    out$train_ids <- df[[id]]
+  }
+
+  rm(Xdf)
+  gc()
+
+  return(out)
 }
