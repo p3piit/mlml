@@ -26,10 +26,15 @@
 #' @param seed Integer. Random seed for reproducibility.
 #' @param num.threads Integer or \code{NULL}. Number of threads used by \code{ranger}
 #'   (\code{NULL} uses all available threads).
-#'
+#' @param save_forest Logical. Whether to save the full forest object  
+#'  (\code{rf$forest}); if \code{FALSE}, only the forest structure is saved.
+#' @param save_gll Logical. Whether to save the generalized log-likelihood (GLL) trace
+#'   for diagnostic purposes.
+#' @param save_train_ids Logical. Whether to save the training cluster IDs.
+#' 
 #' @return A list with components:
 #' \describe{
-#'   \item{forest}{Fitted random forest object (stored as \code{rf$forest}).}
+#'   \item{forest}{Fitted random forest object (stored as \code{rf$forest}).} 
 #'   \item{b}{Matrix of estimated random effects (clusters x q).}
 #'   \item{D}{Estimated random-effects covariance matrix.}
 #'   \item{sigma2}{Estimated residual variance.}
@@ -81,19 +86,22 @@
 #'
 #' # Predicted classes on training data
 #' pred <- predict_gmerf(fit, new_df = df, random_effects = "x1", id = "id")
-fit_gmerf_small    <- function(df,               # df: data.frame with columns
-                               id = "id",      # cluster identifier column name
-                               target = "y",        # response column name
+fit_gmerf_small    <- function(df,                     # df: data.frame with columns
+                               id = "id",              # cluster identifier column name
+                               target = "y",           # response column name
                                random_effects = "x1",  # random effects design column names (intercept + slope on x1)
-                               max_iter_inn = 1000,  # maximum number of EM iterations (inner loop)
-                               max_iter_out = 1000,  # maximum number of PQL iterations (outer loop)
-                               tol = 1e-6,           # convergence tolerance for both loops (Aitken or relative diff)
-                               ntrees = 500,        # RF: number of trees
-                               mtry   = NULL,       # RF: features tried at each split (default = floor(p/3) if NULL)
-                               min_node_size = 5,   # RF: terminal node size
-                               max.depth = NULL,    # RF: optional max depth (NULL = unlimited)
-                               seed = 1234,         # random seed for reproducibility
-                               num.threads = NULL   # RF: number of threads (NULL = all available)
+                               max_iter_inn = 1000,    # maximum number of EM iterations (inner loop)
+                               max_iter_out = 1000,    # maximum number of PQL iterations (outer loop)
+                               tol = 1e-6,             # convergence tolerance for both loops (Aitken or relative diff)
+                               ntrees = 500,           # RF: number of trees
+                               mtry   = NULL,          # RF: features tried at each split (default = floor(p/3) if NULL)
+                               min_node_size = 5,      # RF: terminal node size
+                               max.depth = NULL,       # RF: optional max depth (NULL = unlimited)
+                               seed = 1234,            # random seed for reproducibility
+                               num.threads = NULL,     # RF: number of threads (NULL = all available)
+                               save_forest = FALSE,    # whether to save the full forest object
+                               save_gll = FALSE,       # whether to save the GLL trace
+                               save_train_ids = FALSE  # whether to save the training cluster IDs
 ) {
 
   # --- Basic setup ---
@@ -113,7 +121,7 @@ fit_gmerf_small    <- function(df,               # df: data.frame with columns
   sigma2 <- 1                                   # initial residual variance
   D <- diag(q)                                  # initial random-effects covariance (identity)
   b <- matrix(0, G, q)                          # initialize cluster random effects
-  gll <- c(0, 0)                                # GLL storage (2 slots for Aitken acceleration)
+  gll <- c(0)                                # GLL storage (2 slots for Aitken acceleration)
   eta_old <- rep(0, N)                          # previous eta for outer-loop convergence check
   converged_in <- c()                           # inner-loop convergence flags (per outer iteration)
   converged_out <- FALSE                        # outer-loop convergence flag
@@ -152,6 +160,11 @@ fit_gmerf_small    <- function(df,               # df: data.frame with columns
       )
       fhat <- as.numeric(predict(rf, data = Xrf)$predictions)
 
+      if (!save_forest) {
+        rm(rf)  # free memory by removing full rf object
+      } 
+
+
       # (1.iii) Update random effects b_i
       Ainv <- Ajnv_fun(Z = Z, D = D, sigma2 = sigma2, G = G, idx = idx_by_cluster, w = w)  # build V_i per cluster
       b <- b_fun_small(G = G, Z = Z, idx = idx_by_cluster,
@@ -166,10 +179,10 @@ fit_gmerf_small    <- function(df,               # df: data.frame with columns
       D <- D_fun_small(G = G, b = b, Ainv = Ainv)
 
       # --- Inner-loop convergence check (GLL stabilization) ---
-      gll[m + 2] <- gll_fun(D = D, b = b, idx = idx_by_cluster,
+      gll[m + 1] <- gll_fun(D = D, b = b, idx = idx_by_cluster,
                             Z = Z, y = y_t, fhat = fhat, s2 = sigma2, w = w)
       if (m > 1L) {
-        rel <- abs(gll[m + 2] - gll[m + 1]) / (abs(gll[m + 1]) + 1e-12)
+        rel <- abs(gll[m + 1] - gll[m]) / (abs(gll[m]) + 1e-12)
         if (rel < tol) { n_iter <- m; converged_in_t <- TRUE; break }
       }
 
@@ -211,18 +224,34 @@ fit_gmerf_small    <- function(df,               # df: data.frame with columns
     }
   }
 
-  # --- Return fitted components ---
-  list(
-    forest = rf$forest,           # fitted regression forest
-    b = b,                         # estimated random effects (G x q)
-    D = D,                         # estimated random-effects covariance
-    sigma2 = sigma2,               # estimated residual variance
-    mu = mu,                       # conditional means
-    converged_in = converged_in,   # convergence flags for inner loops
-    converged_out = converged_out, # convergence flag for outer loop
-    n_iter = n_iter,               # iterations performed (inner loop)
-    train_ids = df$id,             # cluster identifiers in training set
-    gll = gll,                     # GLL trace (for diagnostics)
-    tol = tol                      # convergence tolerance used
+  out <- list(
+    # include fitted forest only if explicitly requested and rf exists
+    b = b,
+    D = D,
+    sigma2 = sigma2,
+    mu = mu,
+    converged_in = converged_in,
+    converged_out = converged_out,
+    n_iter = n_iter,
+    tol = tol
   )
+
+  if (save_forest) {
+    # rf may have been removed inside loop; attempt to reconstruct minimal forest if needed
+    # Note: if user requested to keep forest, they must also set save_forest = TRUE.
+    out$forest <- if (exists("rf")) rf else NULL
+  }
+
+  if (save_train_ids) {
+    out$train_ids <- df[[id]]
+  }
+
+  if (save_gll) {
+    out$gll <- gll
+  } 
+  # free large local objects before returning
+  rm(Xrf)
+  gc()
+
+  out
 }

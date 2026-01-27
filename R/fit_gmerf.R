@@ -36,6 +36,7 @@
 #'   \item \code{train_ids}: cluster identifiers used in training (copied from \code{df[[id]]})
 #'   \item \code{gll}: trace of generalized log-likelihood values (for diagnostics)
 #'   \item \code{tol}: convergence tolerance used
+#'   \item \code{num.threads}: number of threads used in ranger
 #' }
 #'
 #' @details
@@ -95,7 +96,8 @@ fit_gmerf    <- function(df,               # df: data.frame with columns
                          mtry   = NULL,       # RF: features tried at each split (default = floor(p/3) if NULL)
                          min_node_size = 5,   # RF: terminal node size
                          max.depth = NULL,    # RF: optional max depth (NULL = unlimited)
-                         seed = 1234          # random seed for reproducibility
+                         seed = 1234,         # random seed for reproducibility
+                         num.threads = NULL   # number of threads for ranger (NULL = all available)
 ) {
 
   # --- Basic setup ---
@@ -148,7 +150,8 @@ fit_gmerf    <- function(df,               # df: data.frame with columns
         respect.unordered.factors = TRUE,
         importance      = "none",
         write.forest    = TRUE,
-        seed            = seed
+        seed            = seed,
+        num.threads     = num.threads
       )
       fhat <- as.numeric(predict(rf, data = Xrf)$predictions)
 
