@@ -31,6 +31,7 @@
 #' @param save_gll Logical. Whether to save the generalized log-likelihood (GLL) trace
 #'   for diagnostic purposes.
 #' @param save_train_ids Logical. Whether to save the training cluster IDs.
+#' @param sanity_checks Logical. Whether to print sanity check messages during fitting.
 #' 
 #' @return A list with components:
 #' \describe{
@@ -101,7 +102,8 @@ fit_gmerf_small    <- function(df,                     # df: data.frame with col
                                num.threads = NULL,     # RF: number of threads (NULL = all available)
                                save_forest = FALSE,    # whether to save the full forest object
                                save_gll = FALSE,       # whether to save the GLL trace
-                               save_train_ids = FALSE  # whether to save the training cluster IDs
+                               save_train_ids = FALSE, # whether to save the training cluster IDs
+                               sanity_checks = FALSE   # whether to print sanity check messages during fitting
 ) {
 
   # --- Basic setup ---
@@ -126,7 +128,8 @@ fit_gmerf_small    <- function(df,                     # df: data.frame with col
   converged_in <- c()                           # inner-loop convergence flags (per outer iteration)
   converged_out <- FALSE                        # outer-loop convergence flag
   time_start <- proc.time()                    # start timer
-
+  Xrf <- data.table::as.data.table(
+        df[setdiff(names(df), c(id, target))])
   # --- Outer loop (PQL updates) ---
   repeat {
     m = 0                                       # reset inner-loop counter
@@ -144,10 +147,10 @@ fit_gmerf_small    <- function(df,                     # df: data.frame with col
       y_star <- y_t - zb                        # adjusted response for tree fit
 
       # (1.ii) M-step: fit random forest to (y_tilde*, X, W)
-      Xrf <- df[setdiff(names(df), c(id, target))]
+      Xrf <- Xrf[, y_star := y_star] 
       rf <- ranger::ranger(
         formula         = y_star ~ .,
-        data            = cbind(y_star = y_star, Xrf),
+        data            = Xrf,
         case.weights    = w,
         num.trees       = ntrees,
         min.node.size   = min_node_size,
@@ -222,7 +225,21 @@ fit_gmerf_small    <- function(df,                     # df: data.frame with col
       message(sprintf("WARNING: the PQL algorithm did not converge in %d iterations.", max_iter_out))
       break
     }
+
+    if (M %% 10 == 0 && sanity_checks) {
+      cat(sprintf("Outer iteration %d completed. d_eta = %.6f\n", M, d_eta))
+    }
+
+
   }
+
+  
+  time_elapsed <- proc.time() - time_start
+  time_elapsed_min <- time_elapsed["elapsed"] / 60
+  time_elapsed_hours <- time_elapsed_min / 60
+  message(sprintf("Total elapsed time: %.2f sec (%.0f min, %.0f hours). \n",
+                  time_elapsed["elapsed"], time_elapsed_min, time_elapsed_hours))
+  
 
   out <- list(
     # include fitted forest only if explicitly requested and rf exists
@@ -239,7 +256,7 @@ fit_gmerf_small    <- function(df,                     # df: data.frame with col
   if (save_forest) {
     # rf may have been removed inside loop; attempt to reconstruct minimal forest if needed
     # Note: if user requested to keep forest, they must also set save_forest = TRUE.
-    out$forest <- if (exists("rf")) rf else NULL
+    out$forest <- rf
   }
 
   if (save_train_ids) {
@@ -253,5 +270,5 @@ fit_gmerf_small    <- function(df,                     # df: data.frame with col
   rm(Xrf)
   gc()
 
-  out
+  return(out)
 }
