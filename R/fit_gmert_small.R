@@ -144,9 +144,9 @@ fit_gmert_small    <- function(df,               # df: data.frame with columns
                             xval = xval,
                             minbucket = minbucket, 
                             maxdepth = maxdepth)
-      Xdf <- Xdf[, y_star := y_star]
+      Xdf <- Xdf[, y_star := ..y_star]
       tree <- rpart(y_star ~ .,
-                    data = Xdf_tree,
+                    data = Xdf,
                     weights = w, 
                     method = "anova", 
                     control = ctrl)
@@ -215,18 +215,27 @@ fit_gmert_small    <- function(df,               # df: data.frame with columns
     }
 
     if (M %% 10 == 0 & sanity_checks) {
-      time_elapsed <- proc.time() - time_start
-      message(sprintf("Outer iteration %d: elapsed time = %.2f sec, d_eta = %.6f. \n",
-                      M, time_elapsed["elapsed"], d_eta))
+     time_elapsed <- proc.time() - time_start
+     time_elapsed_seconds <- time_elapsed["elapsed"]
+     time_elapsed_minutes <- floor(time_elapsed_seconds / 60) - floor(time_elapsed_seconds / 3600) * 60
+     time_elapsed_hours <- floor(time_elapsed_seconds / 3600)
+     message(sprintf("Outer iteration %d: elapsed time = %.2f hours, %.0f minutes, %.2f seconds,\n
+                     d_eta = %.6f. \n",
+                     M, time_elapsed_hours, time_elapsed_minutes,
+                     time_elapsed_seconds - floor(time_elapsed_seconds / 60) * 60, d_eta))
     }
+
+
   }
 
-  time_elapsed <- proc.time() - time_start
-  time_elapsed_min <- time_elapsed["elapsed"] / 60
-  time_elapsed_hours <- time_elapsed_min / 60
-  message(sprintf("Total elapsed time: %.2f sec (%.0f min, %.0f hours). \n",
-                  time_elapsed["elapsed"], time_elapsed_min, time_elapsed_hours))
   
+  time_elapsed <- proc.time() - time_start
+  time_elapsed_seconds <- time_elapsed["elapsed"] - floor(time_elapsed["elapsed"] / 60) * 60
+  time_elapsed_minutes <- floor(time_elapsed_seconds / 60) - floor(time_elapsed_seconds / 3600) * 60
+  time_elapsed_hours <- floor(time_elapsed_seconds / 3600)
+  message(sprintf("Total elapsed time: %.2f hours, %.0f minutes, %.2f seconds. \n",
+                  time_elapsed_hours, time_elapsed_minutes, time_elapsed_seconds))
+
   out <- list(
     # include fitted forest only if explicitly requested and rf exists
     b = b,
