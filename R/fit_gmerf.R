@@ -193,6 +193,8 @@ fit_gmerf    <- function(df,               # df: data.frame with columns
       zb[idx] <- Z[idx, , drop = FALSE] %*% b[g, ]
     }
     eta <- fhat + zb                            # recompute linear predictor
+    mu <- pmin(pmax(plogis(eta), 10e-15), 1 - 1e-15)            # updated conditional means (capped below 1)
+    
 
     # (Outer stopping rule – paper style)
     d_eta <- sqrt(mean((eta - eta_old)^2))      # RMS change of eta
@@ -201,18 +203,19 @@ fit_gmerf    <- function(df,               # df: data.frame with columns
       break
     }
 
-    # Update working quantities for next outer iteration
-    eta_old <- eta
-    mu <- pmin(pmax(plogis(eta), 10e-15), 1 - 1e-15)            # updated conditional means (capped below 1)
-    y_t <- log(mu / (1 - mu)) + (y - mu) / (mu * (1 - mu))  # new pseudo-response
-    w <- mu * (1 - mu)                          # new working weights
-
     M <- M + 1L
     if (M >= max_iter_out) {                    # guard against outer non-convergence
       converged_out <- FALSE
       message(sprintf("WARNING: the PQL algorithm did not converge in %d iterations.", max_iter_out))
       break
     }
+
+    # Update working quantities for next outer iteration
+    eta_old <- eta
+    y_t <- log(mu / (1 - mu)) + (y - mu) / (mu * (1 - mu))  # new pseudo-response
+    w <- mu * (1 - mu)                          # new working weights
+
+
   }
 
   # --- Return fitted components ---

@@ -26,9 +26,6 @@
 #' @param minbucket Integer. Minimum number of observations in any terminal node.
 #' @param maxdepth Integer. Maximum depth of the fitted tree.
 #' @param xval Integer. Number of cross-validation folds in \code{rpart}.
-#' @param save_tree Logical. Whether to save the full \code{rpart} tree object in the output.
-#' @param save_gll Logical. Whether to save the generalized log-likelihood trace.
-#' @param save_train_ids Logical. Whether to save the training cluster IDs.
 #' @param sanity_checks Logical. Whether to print sanity check messages during fitting.
 #'
 #' @return A list with components:
@@ -90,9 +87,6 @@ fit_gmert_small    <- function(df,               # df: data.frame with columns
                                minbucket = 20,       # minimum number of obs in any terminal node
                                maxdepth = 5,         # maximum tree depth
                                xval = 10,            # number of cross-validation folds in rpart
-                               save_tree = FALSE,    # whether to save the full tree object
-                               save_gll = FALSE,       # whether to save the GLL trace
-                               save_train_ids = FALSE, # whether to save the training cluster IDs
                                sanity_checks = FALSE   # whether to print sanity check messages during fitting
 ) {
 
@@ -121,6 +115,11 @@ fit_gmert_small    <- function(df,               # df: data.frame with columns
         df[setdiff(names(df), c(id, target))])
   
   time_start <- proc.time()                        # start timer
+  ctrl <- rpart.control(cp = cp, 
+                        minsplit = minsplit, 
+                        xval = xval,
+                        minbucket = minbucket, 
+                        maxdepth = maxdepth)
 
   # --- Outer loop (PQL updates) ---
   repeat {
@@ -139,11 +138,6 @@ fit_gmert_small    <- function(df,               # df: data.frame with columns
       y_star <- y_t - zb                        # adjusted response for tree fit
 
       # (1.ii) M-step: fit regression tree for fixed effects f(X)
-      ctrl <- rpart.control(cp = cp, 
-                            minsplit = minsplit, 
-                            xval = xval,
-                            minbucket = minbucket, 
-                            maxdepth = maxdepth)
       Xdf <- Xdf[, y_star := ..y_star]
       tree <- rpart(y_star ~ .,
                     data = Xdf,
@@ -151,10 +145,8 @@ fit_gmert_small    <- function(df,               # df: data.frame with columns
                     method = "anova", 
                     control = ctrl)
       fhat <- as.numeric(predict(tree, newdata = Xdf))
+      rm(tree)
       
-      if (!save_tree) {
-        rm(tree)
-      }
 
       # (1.iii) Update random effects b_i
       Ainv <- Ajnv_fun(Z = Z, D = D, sigma2 = sigma2, G = G, idx = idx_by_cluster, w = w)  # build V_i per cluster
@@ -193,6 +185,8 @@ fit_gmert_small    <- function(df,               # df: data.frame with columns
       zb[idx] <- Z[idx, , drop = FALSE] %*% b[g, ]
     }
     eta <- fhat + zb                            # recompute linear predictor
+    mu <- pmin(pmax(plogis(eta), 10e-15), 1 - 1e-15)            # updated conditional means (capped below 1)
+    
 
     # (Outer stopping rule – paper style)
     d_eta <- sqrt(mean((eta - eta_old)^2))      # RMS change of eta
@@ -201,18 +195,19 @@ fit_gmert_small    <- function(df,               # df: data.frame with columns
       break
     }
 
-    # Update working quantities for next outer iteration
-    eta_old <- eta
-    mu <- pmin(pmax(plogis(eta), 10e-15), 1 - 1e-15)            # updated conditional means (capped below 1)
-    y_t <- log(mu / (1 - mu)) + (y - mu) / (mu * (1 - mu))  # new pseudo-response
-    w <- mu * (1 - mu)                          # new working weights
-
     M <- M + 1L
     if (M >= max_iter_out) {                    # guard against outer non-convergence
       converged_out <- FALSE
       message(sprintf("WARNING: the PQL algorithm did not converge in %d iterations.", max_iter_out))
       break
     }
+
+    # Update working quantities for next outer iteration
+    eta_old <- eta
+    y_t <- log(mu / (1 - mu)) + (y - mu) / (mu * (1 - mu))  # new pseudo-response
+    w <- mu * (1 - mu)                          # new working weights
+
+
 
     if (M %% 10 == 0 & sanity_checks) {
      time_elapsed <- proc.time() - time_start
@@ -228,6 +223,12 @@ fit_gmert_small    <- function(df,               # df: data.frame with columns
 
   }
 
+  
+  final_tree <- rpart(y_star ~ .,
+                data = Xdf,
+                weights = w, 
+                method = "anova", 
+                control = ctrl)
   
   time_elapsed <- proc.time() - time_start
   time_elapsed_seconds <- time_elapsed["elapsed"] - floor(time_elapsed["elapsed"] / 60) * 60
@@ -245,19 +246,10 @@ fit_gmert_small    <- function(df,               # df: data.frame with columns
     converged_in = converged_in,
     converged_out = converged_out,
     n_iter = n_iter,
-    tol = tol
+    tol = tol,
+    tree = final_tree,
+    train_ids = unique(df[[id]])
   )
-  if (save_tree) {
-    out$tree <- tree
-  }
-
-  if (save_gll) {
-    out$gll <- gll
-  }
-
-  if (save_train_ids) {
-    out$train_ids <- df[[id]]
-  }
 
   rm(Xdf)
   gc()

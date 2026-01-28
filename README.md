@@ -104,3 +104,5 @@ https://doi.org/10.1002/sam.11505
 **Paolo Colussi**  
 Master’s student  
 Email: p.colussi@uu.nl  
+
+[![fair-software.eu](https://img.shields.io/badge/fair--software.eu-%E2%97%8F%20%20%E2%97%8F%20%20%E2%97%8B%20%20%E2%97%8F%20%20%E2%97%8B-orange)](https://fair-software.eu)

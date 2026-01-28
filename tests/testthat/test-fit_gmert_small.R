@@ -18,9 +18,6 @@ test_that("fit_gmert_small returns the expected object structure (fast settings)
     minsplit = 20,
     minbucket = 10,
     xval = 0,
-    save_tree = TRUE,
-    save_gll = TRUE,
-    save_train_ids = TRUE,
     sanity_checks = FALSE
   )
 
@@ -29,7 +26,7 @@ test_that("fit_gmert_small returns the expected object structure (fast settings)
   expect_true(all(c(
     "tree", "b", "D", "sigma2", "mu",
     "converged_in", "converged_out",
-    "n_iter", "train_ids", "gll", "tol" ) %in% names(fit)))
+    "n_iter", "train_ids", "tol" ) %in% names(fit)))
 
   # fitted tree
   expect_true(inherits(fit$tree, "rpart"))
@@ -64,11 +61,7 @@ test_that("fit_gmert_small returns the expected object structure (fast settings)
   expect_true(is.logical(fit$converged_in))
 
   # stored train ids
-  expect_equal(length(fit$train_ids), nrow(split$train))
-
-  # gll trace exists
-  expect_true(is.numeric(fit$gll))
-  expect_true(length(fit$gll) >= 2)
+  expect_equal(length(fit$train_ids), length(unique(split$train$id)))
 })
 
 test_that("fit_gmert_small runs end-to-end and predicts without error", {
@@ -88,9 +81,6 @@ test_that("fit_gmert_small runs end-to-end and predicts without error", {
     minsplit = 15,
     minbucket = 8,
     xval = 0,
-    save_tree = TRUE,
-    save_gll = TRUE,
-    save_train_ids = TRUE,
     sanity_checks = FALSE
   )
 
@@ -168,8 +158,7 @@ test_that("fit_gmert_small and fit_gmert converge to similar results (same data/
     maxdepth = 3,
     minsplit = 15,
     minbucket = 8,
-    xval = 0,
-    save_tree = TRUE
+    xval = 0
   )
 
   # --- Similarity checks (tolerances are intentionally not ultra-tight) ---

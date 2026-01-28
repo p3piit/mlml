@@ -113,13 +113,13 @@ test_that("fit_gmerf and fit_gmerf_small produce broadly similar fitted values",
     target = "y",
     random_effects = "x1",
     max_iter_inn = 500,
-    max_iter_out = 20,
+    max_iter_out = 200,
     tol = 1e-4,
     ntrees = 100,         # keep moderate for tests
     min_node_size = 5,
     mtry = NULL,
     max.depth = NULL,
-    seed = 202
+    seed = 22
   )
 
   set.seed(202)
@@ -129,14 +129,14 @@ test_that("fit_gmerf and fit_gmerf_small produce broadly similar fitted values",
     target = "y",
     random_effects = "x1",
     max_iter_inn = 500,
-    max_iter_out = 20,
+    max_iter_out = 200,
     tol = 1e-4,
     ntrees = 100,         # same RF settings as standard
     min_node_size = 5,
     mtry = NULL,
     max.depth = NULL,
-    seed = 202,
-    num.threads = 1
+    seed = 22,
+    num.threads = NULL
   )
 
   # Compare a few core quantities on a *relative* basis
@@ -165,35 +165,36 @@ test_that("fit_gmerf_small is faster than fit_gmerf", {
   skip_on_cran()
 
   # keep models small so timings are reasonable but measurable
-  df <- sim_data_gmert(G = 8, n_i = 15, seed = 1234)
+  df <- sim_data_gmert(G = 50, n_i = 15, seed = 1234)
 
   set.seed(42)
   t_std <- system.time({
-    fit_std_save <- fit_gmerf(
+    fit_std <- fit_gmerf(
       df = df,
       id = "id",
       target = "y",
       random_effects = "x1",
       max_iter_inn = 100,
-      max_iter_out = 100,
+      max_iter_out = 50,
       tol = 1e-4,
       ntrees = 20,
       min_node_size = 5,
       mtry = NULL,
       max.depth = NULL,
-      seed = 42
+      seed = 42,
+      num.threads = NULL
         )
   })["elapsed"]
 
   set.seed(42)
   t_small <- system.time({
-    fit_std_nosave <- fit_gmerf_small(
+    fit_small <- fit_gmerf_small(
       df = df,
       id = "id",
       target = "y",
       random_effects = "x1",
       max_iter_inn = 100,
-      max_iter_out = 100,
+      max_iter_out = 50,
       tol = 1e-4,
       ntrees = 20,
       min_node_size = 5,
