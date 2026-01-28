@@ -21,16 +21,13 @@ test_that("fit_gmerf_small returns a valid fitted object and makes predictions",
     max.depth = NULL,
     seed = 123,
     num.threads = 1,        # keep deterministic / light for checks
-    save_forest = TRUE,
-    save_gll = TRUE,
-    save_train_ids = TRUE,
     sanity_checks = FALSE
   )
 
   # structure checks
   expect_type(fit, "list")
   expect_true(all(c("forest", "b", "D", "sigma2", "mu", "converged_in",
-                    "converged_out", "n_iter", "train_ids", "gll", "tol") %in% names(fit)))
+                    "converged_out", "n_iter", "train_ids", "tol") %in% names(fit)))
 
   # sanity checks on returned objects
   expect_true(is.list(fit$forest) || is.environment(fit$forest) || !is.null(fit$forest))
@@ -67,8 +64,7 @@ test_that("fit_gmerf_small is reproducible given the same seed", {
     tol = 1e-4,
     ntrees = 50,
     seed = 999,
-    num.threads = 1,
-    save_forest = TRUE
+    num.threads = 1
   )
 
   set.seed(999)
@@ -82,8 +78,7 @@ test_that("fit_gmerf_small is reproducible given the same seed", {
     tol = 1e-4,
     ntrees = 50,
     seed = 999,
-    num.threads = 1,
-    save_forest = TRUE
+    num.threads = 1
   )
 
   # core fitted quantities should match exactly (or extremely closely) under same seed
@@ -118,13 +113,13 @@ test_that("fit_gmerf and fit_gmerf_small produce broadly similar fitted values",
     target = "y",
     random_effects = "x1",
     max_iter_inn = 500,
-    max_iter_out = 20,
+    max_iter_out = 200,
     tol = 1e-4,
     ntrees = 100,         # keep moderate for tests
     min_node_size = 5,
     mtry = NULL,
     max.depth = NULL,
-    seed = 202
+    seed = 22
   )
 
   set.seed(202)
@@ -134,16 +129,14 @@ test_that("fit_gmerf and fit_gmerf_small produce broadly similar fitted values",
     target = "y",
     random_effects = "x1",
     max_iter_inn = 500,
-    max_iter_out = 20,
+    max_iter_out = 200,
     tol = 1e-4,
     ntrees = 100,         # same RF settings as standard
     min_node_size = 5,
     mtry = NULL,
     max.depth = NULL,
-    seed = 202,
-    num.threads = 1,       # keep stable in checks
-    save_forest = TRUE,
-    save_train_ids = TRUE
+    seed = 22,
+    num.threads = NULL
   )
 
   # Compare a few core quantities on a *relative* basis
@@ -168,4 +161,56 @@ test_that("fit_gmerf and fit_gmerf_small produce broadly similar fitted values",
 })
 
 
+test_that("fit_gmerf_small is faster than fit_gmerf", {
+  skip_on_cran()
+
+  # keep models small so timings are reasonable but measurable
+  df <- sim_data_gmert(G = 50, n_i = 15, seed = 1234)
+
+  set.seed(42)
+  t_std <- system.time({
+    fit_std <- fit_gmerf(
+      df = df,
+      id = "id",
+      target = "y",
+      random_effects = "x1",
+      max_iter_inn = 100,
+      max_iter_out = 50,
+      tol = 1e-4,
+      ntrees = 20,
+      min_node_size = 5,
+      mtry = NULL,
+      max.depth = NULL,
+      seed = 42,
+      num.threads = NULL
+        )
+  })["elapsed"]
+
+  set.seed(42)
+  t_small <- system.time({
+    fit_small <- fit_gmerf_small(
+      df = df,
+      id = "id",
+      target = "y",
+      random_effects = "x1",
+      max_iter_inn = 100,
+      max_iter_out = 50,
+      tol = 1e-4,
+      ntrees = 20,
+      min_node_size = 5,
+      mtry = NULL,
+      max.depth = NULL,
+      seed = 42,
+      num.threads = NULL
+    )
+  })["elapsed"]
+
+
+
+  expect_true(is.numeric(t_small) && is.numeric(t_std))
+
+  # small variant should be faster
+  expect_lt(as.numeric(t_small), as.numeric(t_std))
+
+})
 

@@ -26,11 +26,6 @@
 #' @param seed Integer. Random seed for reproducibility.
 #' @param num.threads Integer or \code{NULL}. Number of threads used by \code{ranger}
 #'   (\code{NULL} uses all available threads).
-#' @param save_forest Logical. Whether to save the full forest object  
-#'  (\code{rf$forest}); if \code{FALSE}, only the forest structure is saved.
-#' @param save_gll Logical. Whether to save the generalized log-likelihood (GLL) trace
-#'   for diagnostic purposes.
-#' @param save_train_ids Logical. Whether to save the training cluster IDs.
 #' @param sanity_checks Logical. Whether to print sanity check messages during fitting.
 #' 
 #' @return A list with components:
@@ -100,9 +95,6 @@ fit_gmerf_small    <- function(df,                     # df: data.frame with col
                                max.depth = NULL,       # RF: optional max depth (NULL = unlimited)
                                seed = 1234,            # random seed for reproducibility
                                num.threads = NULL,     # RF: number of threads (NULL = all available)
-                               save_forest = FALSE,    # whether to save the full forest object
-                               save_gll = FALSE,       # whether to save the GLL trace
-                               save_train_ids = FALSE, # whether to save the training cluster IDs
                                sanity_checks = FALSE   # whether to print sanity check messages during fitting
 ) {
 
@@ -149,7 +141,7 @@ fit_gmerf_small    <- function(df,                     # df: data.frame with col
       # (1.ii) M-step: fit random forest to (y_tilde*, X, W)
       Xrf <- Xrf[, y_star := ..y_star] 
       rf <- ranger::ranger(
-        formula         = y_star ~ .,
+        dependent.variable.name = "y_star",
         data            = Xrf,
         case.weights    = w,
         num.trees       = ntrees,
@@ -162,10 +154,8 @@ fit_gmerf_small    <- function(df,                     # df: data.frame with col
         num.threads     = num.threads
       )
       fhat <- as.numeric(predict(rf, data = Xrf)$predictions)
-
-      if (!save_forest) {
-        rm(rf)  # free memory by removing full rf object
-      } 
+      rm(rf)  # free memory by removing full rf object
+      
 
 
       # (1.iii) Update random effects b_i
@@ -205,6 +195,8 @@ fit_gmerf_small    <- function(df,                     # df: data.frame with col
       zb[idx] <- Z[idx, , drop = FALSE] %*% b[g, ]
     }
     eta <- fhat + zb                            # recompute linear predictor
+    mu <- pmin(pmax(plogis(eta), 10e-15), 1 - 1e-15)            # updated conditional means (capped below 1)
+    
 
     # (Outer stopping rule – paper style)
     d_eta <- sqrt(mean((eta - eta_old)^2))      # RMS change of eta
@@ -213,24 +205,25 @@ fit_gmerf_small    <- function(df,                     # df: data.frame with col
       break
     }
 
-    # Update working quantities for next outer iteration
-    eta_old <- eta
-    mu <- pmin(pmax(plogis(eta), 10e-15), 1 - 1e-15)            # updated conditional means (capped below 1)
-    y_t <- log(mu / (1 - mu)) + (y - mu) / (mu * (1 - mu))  # new pseudo-response
-    w <- mu * (1 - mu)                          # new working weights
-
-    M <- M + 1L
+     M <- M + 1L
     if (M >= max_iter_out) {                    # guard against outer non-convergence
       converged_out <- FALSE
       message(sprintf("WARNING: the PQL algorithm did not converge in %d iterations.", max_iter_out))
       break
     }
 
+    # Update working quantities for next outer iteration
+    eta_old <- eta
+    y_t <- log(mu / (1 - mu)) + (y - mu) / (mu * (1 - mu))  # new pseudo-response
+    w <- mu * (1 - mu)                          # new working weights
+
+
+
     if (M %% 10 == 0 & sanity_checks) {
       time_elapsed <- proc.time() - time_start
       time_elapsed_seconds <- time_elapsed["elapsed"]
-      time_elapsed_minutes <- floor(time_elapsed_seconds / 60) - floor(time_elapsed_seconds / 3600) * 60
-      time_elapsed_hours <- floor(time_elapsed_seconds / 3600)
+      time_elapsed_minutes <- floor(time_elapsed["elapsed"] / 60) - floor(time_elapsed["elapsed"] / 3600) * 60
+      time_elapsed_hours <- floor(time_elapsed["elapsed"] / 3600)
       message(sprintf("Outer iteration %d: elapsed time = %.2f hours, %.0f minutes, %.2f seconds,\n
                        d_eta = %.6f. \n",
                       M, time_elapsed_hours, time_elapsed_minutes,
@@ -240,11 +233,25 @@ fit_gmerf_small    <- function(df,                     # df: data.frame with col
 
   }
 
+  final_rf <- ranger::ranger(
+        dependent.variable.name = "y_star",
+        data = Xrf,
+        case.weights = w,
+        num.trees = ntrees,
+        min.node.size = min_node_size,
+        max.depth = max.depth,
+        respect.unordered.factors = TRUE,
+        importance = "none",
+        write.forest = TRUE,
+        seed = seed,
+        num.threads = num.threads
+        )
+
   
   time_elapsed <- proc.time() - time_start
   time_elapsed_seconds <- time_elapsed["elapsed"] - floor(time_elapsed["elapsed"] / 60) * 60
-  time_elapsed_minutes <- floor(time_elapsed_seconds / 60) - floor(time_elapsed_seconds / 3600) * 60
-  time_elapsed_hours <- floor(time_elapsed_seconds / 3600)
+  time_elapsed_minutes <- floor(time_elapsed["elapsed"] / 60) - floor(time_elapsed["elapsed"] / 3600) * 60
+  time_elapsed_hours <- floor(time_elapsed["elapsed"] / 3600)
   message(sprintf("Total elapsed time: %.2f hours, %.0f minutes, %.2f seconds. \n",
                   time_elapsed_hours, time_elapsed_minutes, time_elapsed_seconds))
 
@@ -257,22 +264,11 @@ fit_gmerf_small    <- function(df,                     # df: data.frame with col
     converged_in = converged_in,
     converged_out = converged_out,
     n_iter = n_iter,
-    tol = tol
+    tol = tol,
+    forest = final_rf$forest,
+    train_ids = unique(df[[id]])
   )
 
-  if (save_forest) {
-    # rf may have been removed inside loop; attempt to reconstruct minimal forest if needed
-    # Note: if user requested to keep forest, they must also set save_forest = TRUE.
-    out$forest <- rf
-  }
-
-  if (save_train_ids) {
-    out$train_ids <- df[[id]]
-  }
-
-  if (save_gll) {
-    out$gll <- gll
-  } 
   # free large local objects before returning
   rm(Xrf)
   gc()
