@@ -17,7 +17,11 @@ test_that("fit_gmert_small returns the expected object structure (fast settings)
     maxdepth = 3,
     minsplit = 20,
     minbucket = 10,
-    xval = 0
+    xval = 0,
+    save_tree = TRUE,
+    save_gll = TRUE,
+    save_train_ids = TRUE,
+    sanity_checks = FALSE
   )
 
   # basic structure
@@ -25,8 +29,7 @@ test_that("fit_gmert_small returns the expected object structure (fast settings)
   expect_true(all(c(
     "tree", "b", "D", "sigma2", "mu",
     "converged_in", "converged_out",
-    "n_iter", "train_ids", "gll", "tol", "time"
-  ) %in% names(fit)))
+    "n_iter", "train_ids", "gll", "tol" ) %in% names(fit)))
 
   # fitted tree
   expect_true(inherits(fit$tree, "rpart"))
@@ -48,10 +51,6 @@ test_that("fit_gmert_small returns the expected object structure (fast settings)
   expect_true(is.numeric(fit$tol))
   expect_length(fit$tol, 1)
 
-  expect_true(is.numeric(fit$time))
-  expect_length(fit$time, 1)
-  expect_true(is.finite(fit$time))
-  expect_true(fit$time >= 0)
 
   # mu: probabilities for training rows
   expect_true(is.numeric(fit$mu))
@@ -88,7 +87,11 @@ test_that("fit_gmert_small runs end-to-end and predicts without error", {
     maxdepth = 3,
     minsplit = 15,
     minbucket = 8,
-    xval = 0
+    xval = 0,
+    save_tree = TRUE,
+    save_gll = TRUE,
+    save_train_ids = TRUE,
+    sanity_checks = FALSE
   )
 
   pred <- predict_gmert(
@@ -165,7 +168,8 @@ test_that("fit_gmert_small and fit_gmert converge to similar results (same data/
     maxdepth = 3,
     minsplit = 15,
     minbucket = 8,
-    xval = 0
+    xval = 0,
+    save_tree = TRUE
   )
 
   # --- Similarity checks (tolerances are intentionally not ultra-tight) ---

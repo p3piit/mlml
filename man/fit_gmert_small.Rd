@@ -16,7 +16,11 @@ fit_gmert_small(
   minsplit = 50,
   minbucket = 20,
   maxdepth = 5,
-  xval = 10
+  xval = 10,
+  save_tree = FALSE,
+  save_gll = FALSE,
+  save_train_ids = FALSE,
+  sanity_checks = FALSE
 )
 }
 \arguments{
@@ -45,6 +49,14 @@ random-effects design (intercept is added internally).}
 \item{maxdepth}{Integer. Maximum depth of the fitted tree.}
 
 \item{xval}{Integer. Number of cross-validation folds in \code{rpart}.}
+
+\item{save_tree}{Logical. Whether to save the full \code{rpart} tree object in the output.}
+
+\item{save_gll}{Logical. Whether to save the generalized log-likelihood trace.}
+
+\item{save_train_ids}{Logical. Whether to save the training cluster IDs.}
+
+\item{sanity_checks}{Logical. Whether to print sanity check messages during fitting.}
 }
 \value{
 A list with components:

@@ -139,7 +139,7 @@ fit_gmerf_small    <- function(df,                     # df: data.frame with col
       y_star <- y_t - zb                        # adjusted response for tree fit
 
       # (1.ii) M-step: fit random forest to (y_tilde*, X, W)
-      Xrf <- Xrf[, y_star := y_star] 
+      Xrf <- Xrf[, y_star := ..y_star] 
       rf <- ranger::ranger(
         formula         = y_star ~ .,
         data            = Xrf,
@@ -216,8 +216,15 @@ fit_gmerf_small    <- function(df,                     # df: data.frame with col
       break
     }
 
-    if (M %% 10 == 0 && sanity_checks) {
-      cat(sprintf("Outer iteration %d completed. d_eta = %.6f\n", M, d_eta))
+    if (M %% 10 == 0 & sanity_checks) {
+      time_elapsed <- proc.time() - time_start
+      time_elapsed_seconds <- time_elapsed["elapsed"]
+      time_elapsed_minutes <- floor(time_elapsed_seconds / 60) - floor(time_elapsed_seconds / 3600) * 60
+      time_elapsed_hours <- floor(time_elapsed_seconds / 3600)
+      message(sprintf("Outer iteration %d: elapsed time = %.2f hours, %.0f minutes, %.2f seconds,\n
+                       d_eta = %.6f. \n",
+                      M, time_elapsed_hours, time_elapsed_minutes,
+                      time_elapsed_seconds - floor(time_elapsed_seconds / 60) * 60, d_eta))
     }
 
 
@@ -239,11 +246,11 @@ fit_gmerf_small    <- function(df,                     # df: data.frame with col
 
   
   time_elapsed <- proc.time() - time_start
-  time_elapsed_min <- time_elapsed["elapsed"] / 60
-  time_elapsed_hours <- time_elapsed_min / 60
-  message(sprintf("Total elapsed time: %.2f sec (%.0f min, %.0f hours). \n",
-                  time_elapsed["elapsed"], time_elapsed_min, time_elapsed_hours))
-  
+  time_elapsed_seconds <- time_elapsed["elapsed"] - floor(time_elapsed["elapsed"] / 60) * 60
+  time_elapsed_minutes <- floor(time_elapsed_seconds / 60) - floor(time_elapsed_seconds / 3600) * 60
+  time_elapsed_hours <- floor(time_elapsed_seconds / 3600)
+  message(sprintf("Total elapsed time: %.2f hours, %.0f minutes, %.2f seconds. \n",
+                  time_elapsed_hours, time_elapsed_minutes, time_elapsed_seconds))
 
   out <- list(
     # include fitted forest only if explicitly requested and rf exists
