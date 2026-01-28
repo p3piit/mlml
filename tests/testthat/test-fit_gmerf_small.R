@@ -26,7 +26,7 @@ test_that("fit_gmerf_small returns a valid fitted object and makes predictions",
   # structure checks
   expect_type(fit, "list")
   expect_true(all(c("forest", "b", "D", "sigma2", "mu", "converged_in",
-                    "converged_out", "n_iter", "train_ids", "gll", "tol") %in% names(fit)))
+                    "converged_out", "n_iter", "train_ids", "tol") %in% names(fit)))
 
   # sanity checks on returned objects
   expect_true(is.list(fit$forest) || is.environment(fit$forest) || !is.null(fit$forest))
@@ -159,7 +159,7 @@ test_that("fit_gmerf and fit_gmerf_small produce broadly similar fitted values",
   # Here we only have class predictions, so agreement is the main check.
 })
 
-test_that("fit_gmerf_small is faster than fit_gmerf and saving the forest slows fit_gmerf", {
+test_that("fit_gmerf_small is faster than fit_gmerf", {
   skip_on_cran()
 
   # keep models small so timings are reasonable but measurable
@@ -184,7 +184,7 @@ test_that("fit_gmerf_small is faster than fit_gmerf and saving the forest slows 
   })["elapsed"]
 
   set.seed(42)
-  t_small_nosave <- system.time({
+  t_small <- system.time({
     fit_std_nosave <- fit_gmerf_small(
       df = df,
       id = "id",
@@ -198,38 +198,16 @@ test_that("fit_gmerf_small is faster than fit_gmerf and saving the forest slows 
       mtry = NULL,
       max.depth = NULL,
       seed = 42,
-      save_forest = FALSE,
       num.threads = NULL
     )
   })["elapsed"]
 
-  set.seed(42)
-  t_small_save <- system.time({
-    fit_small <- fit_gmerf_small(
-      df = df,
-      id = "id",
-      target = "y",
-      random_effects = "x1",
-      max_iter_inn = 100,
-      max_iter_out = 100,
-      tol = 1e-4,
-      ntrees = 20,
-      min_node_size = 5,
-      mtry = NULL,
-      max.depth = NULL,
-      seed = 42,
-      save_forest = TRUE,
-      num.threads = NULL
-    )
-  })["elapsed"]
 
-  expect_true(is.numeric(t_small_save) && is.numeric(t_small_nosave) && is.numeric(t_std))
 
-  # turning off saving the forest should speed up fit_gmerf
-  expect_lt(as.numeric(t_small_nosave), as.numeric(t_small_save))
+  expect_true(is.numeric(t_small) && is.numeric(t_std))
 
-  # fit_gmerf_small should be faster than the standard implementation (both with and without saved forest)
-  expect_lt(as.numeric(t_small_nosave), as.numeric(t_std))
-  expect_lt(as.numeric(t_small_save), as.numeric(t_std))
+  # small variant should be faster
+  expect_lt(as.numeric(t_small), as.numeric(t_std))
+
 })
 

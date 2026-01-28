@@ -26,11 +26,6 @@
 #' @param seed Integer. Random seed for reproducibility.
 #' @param num.threads Integer or \code{NULL}. Number of threads used by \code{ranger}
 #'   (\code{NULL} uses all available threads).
-#' @param save_forest Logical. Whether to save the full forest object  
-#'  (\code{rf$forest}); if \code{FALSE}, only the forest structure is saved.
-#' @param save_gll Logical. Whether to save the generalized log-likelihood (GLL) trace
-#'   for diagnostic purposes.
-#' @param save_train_ids Logical. Whether to save the training cluster IDs.
 #' @param sanity_checks Logical. Whether to print sanity check messages during fitting.
 #' 
 #' @return A list with components:
@@ -100,9 +95,6 @@ fit_gmerf_small    <- function(df,                     # df: data.frame with col
                                max.depth = NULL,       # RF: optional max depth (NULL = unlimited)
                                seed = 1234,            # random seed for reproducibility
                                num.threads = NULL,     # RF: number of threads (NULL = all available)
-                               save_forest = FALSE,    # whether to save the full forest object
-                               save_gll = FALSE,       # whether to save the GLL trace
-                               save_train_ids = FALSE, # whether to save the training cluster IDs
                                sanity_checks = FALSE   # whether to print sanity check messages during fitting
 ) {
 
@@ -162,10 +154,8 @@ fit_gmerf_small    <- function(df,                     # df: data.frame with col
         num.threads     = num.threads
       )
       fhat <- as.numeric(predict(rf, data = Xrf)$predictions)
-
-      if (!save_forest) {
-        rm(rf)  # free memory by removing full rf object
-      } 
+      rm(rf)  # free memory by removing full rf object
+      
 
 
       # (1.iii) Update random effects b_i
@@ -233,6 +223,20 @@ fit_gmerf_small    <- function(df,                     # df: data.frame with col
 
   }
 
+  final_rf <- ranger::ranger(
+        dependent.variable.name = "y_star",
+        data = Xrf,
+        case.weights = w,
+        num.trees = ntrees,
+        min.node.size = min_node_size,
+        max.depth = max.depth,
+        respect.unordered.factors = TRUE,
+        importance = "none",
+        write.forest = TRUE,
+        seed = seed,
+        num.threads = num.threads
+        )
+
   
   time_elapsed <- proc.time() - time_start
   time_elapsed_min <- time_elapsed["elapsed"] / 60
@@ -250,22 +254,11 @@ fit_gmerf_small    <- function(df,                     # df: data.frame with col
     converged_in = converged_in,
     converged_out = converged_out,
     n_iter = n_iter,
-    tol = tol
+    tol = tol,
+    forest = final_rf$forest,
+    train_ids = unique(df[[id]])
   )
 
-  if (save_forest) {
-    # rf may have been removed inside loop; attempt to reconstruct minimal forest if needed
-    # Note: if user requested to keep forest, they must also set save_forest = TRUE.
-    out$forest <- rf
-  }
-
-  if (save_train_ids) {
-    out$train_ids <- df[[id]]
-  }
-
-  if (save_gll) {
-    out$gll <- gll
-  } 
   # free large local objects before returning
   rm(Xrf)
   gc()
