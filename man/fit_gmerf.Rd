@@ -16,7 +16,8 @@ fit_gmerf(
   mtry = NULL,
   min_node_size = 5,
   max.depth = NULL,
-  seed = 1234
+  seed = 1234,
+  num.threads = NULL
 )
 }
 \arguments{
@@ -60,6 +61,7 @@ A list containing:
 \item \code{train_ids}: cluster identifiers used in training (copied from \code{df[[id]]})
 \item \code{gll}: trace of generalized log-likelihood values (for diagnostics)
 \item \code{tol}: convergence tolerance used
+\item \code{num.threads}: number of threads used in ranger
 }
 }
 \description{

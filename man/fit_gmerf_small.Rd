@@ -17,7 +17,11 @@ fit_gmerf_small(
   min_node_size = 5,
   max.depth = NULL,
   seed = 1234,
-  num.threads = NULL
+  num.threads = NULL,
+  save_forest = FALSE,
+  save_gll = FALSE,
+  save_train_ids = FALSE,
+  sanity_checks = FALSE
 )
 }
 \arguments{
@@ -51,6 +55,16 @@ random-effects design (intercept is added internally).}
 
 \item{num.threads}{Integer or \code{NULL}. Number of threads used by \code{ranger}
 (\code{NULL} uses all available threads).}
+
+\item{save_forest}{Logical. Whether to save the full forest object
+(\code{rf$forest}); if \code{FALSE}, only the forest structure is saved.}
+
+\item{save_gll}{Logical. Whether to save the generalized log-likelihood (GLL) trace
+for diagnostic purposes.}
+
+\item{save_train_ids}{Logical. Whether to save the training cluster IDs.}
+
+\item{sanity_checks}{Logical. Whether to print sanity check messages during fitting.}
 }
 \value{
 A list with components:

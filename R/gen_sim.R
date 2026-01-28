@@ -19,7 +19,7 @@
 #'   Standard deviation(s) for each random slope.
 #' @param intercept_sd Numeric. Standard deviation for the group intercepts.
 #' @param intercept_slope_cor Numeric scalar or numeric vector length `n_random`.
-#'   Correlation(s) between the intercept and each slope (in [-1, 1]).
+#'   Correlation(s) between the intercept and each slope.
 #' @param slope_corr Numeric scalar or numeric matrix. If scalar, used as a common
 #'   pairwise correlation among slopes; if matrix, must be `n_random x n_random`
 #'   and provides slope–slope correlations.

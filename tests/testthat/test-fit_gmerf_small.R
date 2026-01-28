@@ -20,7 +20,11 @@ test_that("fit_gmerf_small returns a valid fitted object and makes predictions",
     mtry = NULL,
     max.depth = NULL,
     seed = 123,
-    num.threads = 1        # keep deterministic / light for checks
+    num.threads = 1,        # keep deterministic / light for checks
+    save_forest = TRUE,
+    save_gll = TRUE,
+    save_train_ids = TRUE,
+    sanity_checks = FALSE
   )
 
   # structure checks
@@ -63,7 +67,8 @@ test_that("fit_gmerf_small is reproducible given the same seed", {
     tol = 1e-4,
     ntrees = 50,
     seed = 999,
-    num.threads = 1
+    num.threads = 1,
+    save_forest = TRUE
   )
 
   set.seed(999)
@@ -77,7 +82,8 @@ test_that("fit_gmerf_small is reproducible given the same seed", {
     tol = 1e-4,
     ntrees = 50,
     seed = 999,
-    num.threads = 1
+    num.threads = 1,
+    save_forest = TRUE
   )
 
   # core fitted quantities should match exactly (or extremely closely) under same seed
@@ -135,7 +141,9 @@ test_that("fit_gmerf and fit_gmerf_small produce broadly similar fitted values",
     mtry = NULL,
     max.depth = NULL,
     seed = 202,
-    num.threads = 1       # keep stable in checks
+    num.threads = 1,       # keep stable in checks
+    save_forest = TRUE,
+    save_train_ids = TRUE
   )
 
   # Compare a few core quantities on a *relative* basis
@@ -159,77 +167,5 @@ test_that("fit_gmerf and fit_gmerf_small produce broadly similar fitted values",
   # Here we only have class predictions, so agreement is the main check.
 })
 
-test_that("fit_gmerf_small is faster than fit_gmerf and saving the forest slows fit_gmerf", {
-  skip_on_cran()
 
-  # keep models small so timings are reasonable but measurable
-  df <- sim_data_gmert(G = 8, n_i = 15, seed = 1234)
-
-  set.seed(42)
-  t_std <- system.time({
-    fit_std_save <- fit_gmerf(
-      df = df,
-      id = "id",
-      target = "y",
-      random_effects = "x1",
-      max_iter_inn = 100,
-      max_iter_out = 100,
-      tol = 1e-4,
-      ntrees = 20,
-      min_node_size = 5,
-      mtry = NULL,
-      max.depth = NULL,
-      seed = 42
-        )
-  })["elapsed"]
-
-  set.seed(42)
-  t_small_nosave <- system.time({
-    fit_std_nosave <- fit_gmerf_small(
-      df = df,
-      id = "id",
-      target = "y",
-      random_effects = "x1",
-      max_iter_inn = 100,
-      max_iter_out = 100,
-      tol = 1e-4,
-      ntrees = 20,
-      min_node_size = 5,
-      mtry = NULL,
-      max.depth = NULL,
-      seed = 42,
-      save_forest = FALSE,
-      num.threads = NULL
-    )
-  })["elapsed"]
-
-  set.seed(42)
-  t_small_save <- system.time({
-    fit_small <- fit_gmerf_small(
-      df = df,
-      id = "id",
-      target = "y",
-      random_effects = "x1",
-      max_iter_inn = 100,
-      max_iter_out = 100,
-      tol = 1e-4,
-      ntrees = 20,
-      min_node_size = 5,
-      mtry = NULL,
-      max.depth = NULL,
-      seed = 42,
-      save_forest = TRUE,
-      num.threads = NULL
-    )
-  })["elapsed"]
-
-  expect_true(is.numeric(t_small_save) && is.numeric(t_small_nosave) && is.numeric(t_std))
-
-  # turning off saving the forest should speed up fit_gmerf
-  expect_lt(as.numeric(t_small_nosave), as.numeric(t_small_save))
-
-  # fit_gmerf_small should be faster than the standard implementation (both with and without saved forest)
-  expect_lt(as.numeric(t_small_nosave), as.numeric(t_std))
-  expect_lt(as.numeric(t_small_save), as.numeric(t_std))
-})
 

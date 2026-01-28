@@ -46,7 +46,7 @@ Standard deviation(s) for each random slope.}
 \item{intercept_sd}{Numeric. Standard deviation for the group intercepts.}
 
 \item{intercept_slope_cor}{Numeric scalar or numeric vector length \code{n_random}.
-Correlation(s) between the intercept and each slope (in \link{-1, 1}).}
+Correlation(s) between the intercept and each slope.}
 
 \item{slope_corr}{Numeric scalar or numeric matrix. If scalar, used as a common
 pairwise correlation among slopes; if matrix, must be \verb{n_random x n_random}
