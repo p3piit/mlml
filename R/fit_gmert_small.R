@@ -217,8 +217,8 @@ fit_gmert_small    <- function(df,               # df: data.frame with columns
     if (M %% 10 == 0 & sanity_checks) {
      time_elapsed <- proc.time() - time_start
      time_elapsed_seconds <- time_elapsed["elapsed"]
-     time_elapsed_minutes <- floor(time_elapsed_seconds / 60) - floor(time_elapsed_seconds / 3600) * 60
-     time_elapsed_hours <- floor(time_elapsed_seconds / 3600)
+     time_elapsed_minutes <- floor(time_elapsed["elapsed"] / 60) - floor(time_elapsed["elapsed"] / 3600) * 60
+     time_elapsed_hours <- floor(time_elapsed["elapsed"] / 3600)
      message(sprintf("Outer iteration %d: elapsed time = %.2f hours, %.0f minutes, %.2f seconds,\n
                      d_eta = %.6f. \n",
                      M, time_elapsed_hours, time_elapsed_minutes,
@@ -231,8 +231,8 @@ fit_gmert_small    <- function(df,               # df: data.frame with columns
   
   time_elapsed <- proc.time() - time_start
   time_elapsed_seconds <- time_elapsed["elapsed"] - floor(time_elapsed["elapsed"] / 60) * 60
-  time_elapsed_minutes <- floor(time_elapsed_seconds / 60) - floor(time_elapsed_seconds / 3600) * 60
-  time_elapsed_hours <- floor(time_elapsed_seconds / 3600)
+  time_elapsed_minutes <- floor(time_elapsed["elapsed"] / 60) - floor(time_elapsed["elapsed"] / 3600) * 60
+  time_elapsed_hours <- floor(time_elapsed["elapsed"] / 3600)
   message(sprintf("Total elapsed time: %.2f hours, %.0f minutes, %.2f seconds. \n",
                   time_elapsed_hours, time_elapsed_minutes, time_elapsed_seconds))
 
