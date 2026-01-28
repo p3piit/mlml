@@ -21,9 +21,6 @@ test_that("fit_gmerf_small returns a valid fitted object and makes predictions",
     max.depth = NULL,
     seed = 123,
     num.threads = 1,        # keep deterministic / light for checks
-    save_forest = TRUE,
-    save_gll = TRUE,
-    save_train_ids = TRUE,
     sanity_checks = FALSE
   )
 
@@ -67,8 +64,7 @@ test_that("fit_gmerf_small is reproducible given the same seed", {
     tol = 1e-4,
     ntrees = 50,
     seed = 999,
-    num.threads = 1,
-    save_forest = TRUE
+    num.threads = 1
   )
 
   set.seed(999)
@@ -82,8 +78,7 @@ test_that("fit_gmerf_small is reproducible given the same seed", {
     tol = 1e-4,
     ntrees = 50,
     seed = 999,
-    num.threads = 1,
-    save_forest = TRUE
+    num.threads = 1
   )
 
   # core fitted quantities should match exactly (or extremely closely) under same seed
@@ -141,9 +136,7 @@ test_that("fit_gmerf and fit_gmerf_small produce broadly similar fitted values",
     mtry = NULL,
     max.depth = NULL,
     seed = 202,
-    num.threads = 1,       # keep stable in checks
-    save_forest = TRUE,
-    save_train_ids = TRUE
+    num.threads = 1
   )
 
   # Compare a few core quantities on a *relative* basis
