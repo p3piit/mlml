@@ -36,7 +36,11 @@ Ajnv_fun <- function(G,        # G      : number of clusters
 
   for (g in seq_len(G)) {
     Zj  <- Z[idx[[g]], , drop = FALSE]             # n_j x q
-    Wj  <- diag(w[idx[[g]]])
+    if (length(w[idx[[g]]]) ==1) {
+      Wj <- as.matrix(w[idx[[g]]])
+    } else {
+      Wj  <- diag(w[idx[[g]]])
+    }
     ZtWZ <- t(Zj) %*% Wj %*% Zj                     # Z_j^T W_j Z_j (q x q)
 
     A <- Djnv + as.numeric((1 / sigma2)) * ZtWZ                # A_j

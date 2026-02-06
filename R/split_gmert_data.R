@@ -36,7 +36,10 @@
 # ---------------------------------------------------------------
 # Train/test split per cluster using the sim_data_gmert() output
 # ---------------------------------------------------------------
-split_gmert_data <- function(df, train_prop = 0.7, seed = 123) {
+split_gmert_data <- function(df, 
+                             train_prop = 0.7, 
+                             seed = 123,
+                             split_by_cluster = FALSE) {
 
   # Set random seed to ensure reproducible splits
   set.seed(seed)
@@ -48,6 +51,21 @@ split_gmert_data <- function(df, train_prop = 0.7, seed = 123) {
   # Extract unique cluster identifiers
   ids <- unique(df$id)
 
+  if (split_by_cluster){
+    # Shuffle cluster IDs
+    shuffled_ids <- sample(ids)
+
+    # Determine number of clusters for training set
+    n_train_clusters <- floor(length(ids) * train_prop)
+
+    # Select cluster IDs for training and test sets
+    train_ids <- shuffled_ids[1:n_train_clusters]
+    test_ids  <- shuffled_ids[(n_train_clusters + 1):length(ids)]
+
+    # Get row indices for training and test sets based on cluster IDs
+    train_idx <- which(df$id %in% train_ids)
+    test_idx  <- which(df$id %in% test_ids)
+  } else {
   # Loop over each cluster
   for (g in ids) {
 
@@ -67,7 +85,7 @@ split_gmert_data <- function(df, train_prop = 0.7, seed = 123) {
     train_idx <- c(train_idx, train_g)
     test_idx  <- c(test_idx, test_g)
   }
-
+  }
   # Subset the original data into training and test data.frames
   train_df <- df[train_idx, ]
   test_df  <- df[test_idx, ]
