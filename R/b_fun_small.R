@@ -44,10 +44,14 @@ b_fun_small <- function(G,        # G      : number of clusters
 
   for (g in seq_len(G)) {
     Zi   <- Z[idx[[g]], , drop = FALSE]           # n_i x q
-    Wi   <- diag(w[idx[[g]]])                     # weights vector (length n_i)
+    if (length(w[idx[[g]]]) ==1) {
+      Wj <- as.matrix(w[idx[[g]]])
+    } else {
+      Wj  <- diag(w[idx[[g]]])
+    }
     resid<- y_t[idx[[g]]] - fhat[idx[[g]]]        # (y_t - fhat) on cluster i
 
-    rhs  <- as.numeric((1 / sigma2)) * t(Zi) %*% (Wi %*% resid)  # right-hand side
+    rhs  <- as.numeric((1 / sigma2)) * t(Zi) %*% (Wj %*% resid)  # right-hand side
     b[g, ] <- as.vector(Ainv[[g]] %*% rhs)           # b_i = A_i^{-1} * rhs
   }
 

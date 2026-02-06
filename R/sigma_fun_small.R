@@ -43,14 +43,20 @@ sigma_fun_small <- function(N,        # N      : total number of rows
 
   for (g in seq_len(G)) {
     Zi  <- Z[idx[[g]], , drop = FALSE]             # n_i x q
-    wi  <- diag(w[idx[[g]]])                             # weights matrix
-    ni  <- length(wi)
+    if (length(w[idx[[g]]]) ==1) {
+      Wj <- as.matrix(w[idx[[g]]])
+      sqrt_wj <- as.matrix(sqrt(w[idx[[g]]]))
+    } else {
+      Wj  <- diag(w[idx[[g]]])
+      sqrt_wj <- diag(sqrt(w[idx[[g]]]))
+    }
+    ni  <- length(Wj)
 
     # residuals eps_i
-    eps_i <- diag(sqrt(w[idx[[g]]])) %*% (y_t[idx[[g]]] - fhat[idx[[g]]] - as.vector(Zi %*% b[g, ]))
+    eps_i <- sqrt_wj %*% (y_t[idx[[g]]] - fhat[idx[[g]]] - as.vector(Zi %*% b[g, ]))
 
     # tr(V_i^{-1})
-    trVi_inv <- (ni / sigma2) - as.numeric((1 / sigma2^2)) * sum(diag(Ainv[[g]] %*% t(Zi) %*% wi %*% Zi))
+    trVi_inv <- (ni / sigma2) - as.numeric((1 / sigma2^2)) * sum(diag(Ainv[[g]] %*% t(Zi) %*% Wj %*% Zi))
 
     # accumulate rss
     rss_total <- rss_total + t(eps_i) %*% eps_i + sigma2 * (ni - sigma2 * trVi_inv)
