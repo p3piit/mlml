@@ -1,7 +1,7 @@
 Package: mlml
 Type: Package
 Title: Utilities functions for my master thesis on multilevel machine learning
-Version: 0.3.0
+Version: 0.3.1
 Author: Paolo Colussi
 Maintainer: Paolo Colussi <p.colussi@uu.nl>
 Description: Implements utility functions developed for a master thesis on multilevel machine learning.
