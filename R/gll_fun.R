@@ -34,7 +34,11 @@ gll_fun <- function(idx, # idx : list of row indices per cluster
   term_logRi <- 0
   for (i in seq_along(idx)) {
     Zi <- Z[idx[[i]], , drop = FALSE]                      # Z_i
-    Wi_sq <- diag(sqrt(w[idx[[i]]]))                       # W_i^{1/2}
+    if (length(w[idx[[i]]]) == 1) {
+      Wi_sq <- as.matrix(sqrt(w[idx[[i]]]))
+    } else {
+      Wi_sq <- diag(sqrt(w[idx[[i]]]))                       # W_i^{1/2}
+    }
     e <- Wi_sq %*% y[idx[[i]]] - Wi_sq %*% fhat[idx[[i]]] - Wi_sq %*% Zi%*% b[i, ]       #  weighted residuals epsilon_i = W_i^{1/2} y - W_i^{1/2} fhat - W_i^{1/2} Z_i b_i
     term_r <- term_r + sum(e^2) / s2                                  # (1/s2) * ||ri||^2
     term_logRi <- term_logRi + length(idx[[i]]) * log(s2)              # n_i * log(s2)
