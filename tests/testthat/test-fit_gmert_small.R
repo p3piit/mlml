@@ -190,3 +190,16 @@ test_that("fit_gmert_small and fit_gmert converge to similar results (same data/
   expect_gt(agree, 0.9)
 })
 
+test_that("fit_gmert_small fits intercept-only model", {
+  df <- gen_sim(n = 100, n_groups = 5, n_vars = 5,  rho = 0.2, seed = 123)
+  res <- fit_gmert_small(
+    df = df,
+    random_effects = NULL,  # no random slopes, only intercept
+    max_iter_inn = 2L,
+    max_iter_out = 1L
+  )
+  expect_true(is.matrix(res$b))
+  expect_equal(ncol(res$b), 1)  # only intercept
+  expect_equal(nrow(res$b), length(unique(df$id)))
+  expect_true(!any(is.na(res$b)))
+})

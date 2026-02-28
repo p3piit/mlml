@@ -214,3 +214,19 @@ test_that("fit_gmerf_small is faster than fit_gmerf", {
 
 })
 
+test_that("fit_gmerf_small fits intercept-only model", {
+  df <- gen_sim(n = 100, n_groups = 5, n_vars = 5, rho = 0.2, seed = 123)
+  # Remove all random effect columns (intercept only)
+  res <- fit_gmerf_small(
+    df = df,
+    random_effects = NULL,  # no random slopes, only intercept
+    ntrees = 10L,
+    max_iter_inn = 2L,
+    max_iter_out = 1L,
+    seed = 123
+  )
+  expect_true(is.matrix(res$b))
+  expect_equal(ncol(res$b), 1)  # only intercept
+  expect_equal(nrow(res$b), length(unique(df$id)))
+  expect_true(!any(is.na(res$b)))
+})

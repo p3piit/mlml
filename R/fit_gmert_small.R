@@ -67,7 +67,7 @@
 #'
 #' @examples
 #' # Simulate clustered binary data
-#' df <- sim_data_gmert(G = 10, n_i = 30, seed = 1)
+#' df <- gen_sim(n = 500, n_groups = 3, n_vars = 10) 
 #'
 #' # Fit the optimized GMERT (A^{-1}-based updates)
 #' fit <- fit_gmert_small(df, id = "id", target = "y", random_effects = "x1",
@@ -93,7 +93,8 @@ fit_gmert_small    <- function(df,               # df: data.frame with columns
   # --- Basic setup ---
   N <- nrow(df)                                 # total number of observations
   G <- length(unique(df[[id]]))                    # number of clusters
-  idx_by_cluster <- split(seq_len(N), df[[id]])    # list: row indices grouped by cluster
+  idx_by_cluster <- split(seq_len(N), df[[id]]) %>% 
+    .[lengths(.) > 0]   # list: row indices grouped by cluster (remove empty groups)
 
   y <- df[[target]]                                     # response vector
   Z <- as.matrix(cbind(1, df[random_effects]))                          # random-effects design: intercept + slope on x1
