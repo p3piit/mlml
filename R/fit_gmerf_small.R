@@ -101,7 +101,8 @@ fit_gmerf_small    <- function(df,                     # df: data.frame with col
   # --- Basic setup ---
   N <- nrow(df)                                 # total number of observations
   G <- length(unique(df[[id]]))                    # number of clusters
-  idx_by_cluster <- split(seq_len(N), df[[id]])    # list: row indices grouped by cluster
+  idx_by_cluster <- split(seq_len(N), df[[id]]) %>% 
+    .[lengths(.) > 0]   # list: row indices grouped by cluster (remove empty groups)
 
   y <- df[[target]]                                     # response vector
   Z <- as.matrix(cbind(1, df[random_effects]))                          # random-effects design: intercept + slope on x1
