@@ -67,11 +67,16 @@
 #'
 #' @examples
 #' # Simulate clustered binary data
-#' df <- gen_sim(n = 500, n_groups = 3, n_vars = 10) 
+#' df <- gen_sim(n = 5000, n_groups = 380, n_vars = 300)
+#' 
+#' 
+#' cluster_sub <- count(df, id) %>%   filter(n > 5)
+#'   df <- df %>% filter(id %in% cluster_sub$id)
+#' df <- split_gmert_data(df,split_by_cluster = TRUE)$train
 #'
 #' # Fit the optimized GMERT (A^{-1}-based updates)
-#' fit <- fit_gmert_small(df, id = "id", target = "y", random_effects = "x1",
-#'                        max_iter_inn = 50, max_iter_out = 50, tol = 1e-4)
+#' fit <- fit_gmert_small(df, id = "id", target = "y", random_effects = NULL,
+#'                        max_iter_inn = 50, max_iter_out = 10, tol = 1e-4)
 #'
 #' # Predicted classes on training data
 #' pred <- predict_gmert(fit, new_df = df, random_effect = "x1", id = "id")
