@@ -146,7 +146,13 @@ gen_sim <- function(
     rand_contrib[i] <- sum(xis * rand_coefs)
   }
   eps <- stats::rnorm(n, mean = 0, sd = sigma)
-  y <-  fixed_part + intercept_part + rand_contrib + eps
+  eta <-  fixed_part + intercept_part + rand_contrib + eps
+  # convert to probabilities via logistic link
+  p <- 1 / (1 + exp(-eta))
+
+  # binary outcome drawn from Bernoulli(p)
+  y <- rbinom(n, 1, p)
+
   df <- data.frame(
     id = factor(groups),
     y = y,
