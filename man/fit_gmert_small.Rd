@@ -17,7 +17,8 @@ fit_gmert_small(
   minbucket = 20,
   maxdepth = 5,
   xval = 10,
-  sanity_checks = FALSE
+  sanity_checks = FALSE,
+  initial_mu = 0.75
 )
 }
 \arguments{
@@ -48,6 +49,8 @@ random-effects design (intercept is added internally).}
 \item{xval}{Integer. Number of cross-validation folds in \code{rpart}.}
 
 \item{sanity_checks}{Logical. Whether to print sanity check messages during fitting.}
+
+\item{initial_mu}{Numeric scalar in (0, 1). Initial value for the conditional means \eqn{\mu_i} used in PQL linearization.}
 }
 \value{
 A list with components:
@@ -78,11 +81,16 @@ with cluster-wise precomputed \eqn{A_i^{-1}} matrices.
 }
 \examples{
 # Simulate clustered binary data
-df <- sim_data_gmert(G = 10, n_i = 30, seed = 1)
+df <- gen_sim(n = 5000, n_groups = 380, n_vars = 300)
+
+
+cluster_sub <- count(df, id) \%>\%   filter(n > 5)
+  df <- df \%>\% filter(id \%in\% cluster_sub$id)
+df <- split_gmert_data(df,split_by_cluster = TRUE)$train
 
 # Fit the optimized GMERT (A^{-1}-based updates)
-fit <- fit_gmert_small(df, id = "id", target = "y", random_effects = "x1",
-                       max_iter_inn = 50, max_iter_out = 50, tol = 1e-4)
+fit <- fit_gmert_small(df, id = "id", target = "y", random_effects = NULL,
+                       max_iter_inn = 50, max_iter_out = 10, tol = 1e-4)
 
 # Predicted classes on training data
 pred <- predict_gmert(fit, new_df = df, random_effect = "x1", id = "id")

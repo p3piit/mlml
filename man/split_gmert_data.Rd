@@ -4,7 +4,7 @@
 \alias{split_gmert_data}
 \title{Train/test split by cluster for GMERT data}
 \usage{
-split_gmert_data(df, train_prop = 0.7, seed = 123)
+split_gmert_data(df, train_prop = 0.7, seed = 123, split_by_cluster = FALSE)
 }
 \arguments{
 \item{df}{A data.frame containing clustered observations. Must include

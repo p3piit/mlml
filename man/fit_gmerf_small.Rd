@@ -18,7 +18,8 @@ fit_gmerf_small(
   max.depth = NULL,
   seed = 1234,
   num.threads = NULL,
-  sanity_checks = FALSE
+  sanity_checks = FALSE,
+  initial_mu = 0.75
 )
 }
 \arguments{
@@ -54,6 +55,8 @@ random-effects design (intercept is added internally).}
 (\code{NULL} uses all available threads).}
 
 \item{sanity_checks}{Logical. Whether to print sanity check messages during fitting.}
+
+\item{initial_mu}{Numeric scalar in (0, 1). Initial value for the conditional means \eqn{\mu_i} used in PQL linearization.}
 }
 \value{
 A list with components:

@@ -27,6 +27,7 @@
 #' @param maxdepth Integer. Maximum depth of the fitted tree.
 #' @param xval Integer. Number of cross-validation folds in \code{rpart}.
 #' @param sanity_checks Logical. Whether to print sanity check messages during fitting.
+#' @param initial_mu Numeric scalar in (0, 1). Initial value for the conditional means \eqn{\mu_i} used in PQL linearization.
 #'
 #' @return A list with components:
 #' \describe{
@@ -92,7 +93,8 @@ fit_gmert_small    <- function(df,               # df: data.frame with columns
                                minbucket = 20,       # minimum number of obs in any terminal node
                                maxdepth = 5,         # maximum tree depth
                                xval = 10,            # number of cross-validation folds in rpart
-                               sanity_checks = FALSE   # whether to print sanity check messages during fitting
+                               sanity_checks = FALSE,  # whether to print sanity check messages during fitting
+                               initial_mu = 0.75      # initial value for conditional means
 ) {
 
   # --- Basic setup ---
@@ -107,7 +109,7 @@ fit_gmert_small    <- function(df,               # df: data.frame with columns
 
   # --- Initialization (Step 0) ---
   M <- 0L                                       # outer-loop counter
-  mu <- ifelse(y == 1, 0.75, 0.25)              # initial conditional means
+  mu <- ifelse(y == 1, initial_mu, 1 - initial_mu)              # initial conditional means
   y_t <- log(mu / (1 - mu)) + (y - mu) / (mu * (1 - mu))  # initial pseudo-response (PQL linearization)
   w <- mu * (1 - mu)                            # initial working weights
   sigma2 <- 1                                   # initial residual variance
