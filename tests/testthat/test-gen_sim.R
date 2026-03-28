@@ -34,3 +34,19 @@ test_that("invalid random_slope_sd length raises error", {
     regexp = "random_slope_sd must be scalar or length n_random"
   )
 })
+
+# R
+library(testthat)
+
+test_that("gen_sim works for intercept-only (n_random = NULL)", {
+  df <- gen_sim(n = 200, n_groups = 20, n_vars = 5, n_random = NULL, seed = 42)
+
+  expect_true(all(c("id", "y") %in% names(df)))
+  expect_equal(ncol(df), 2 + 5)            # id, y, + 5 predictors
+  expect_equal(length(unique(df$id)), 20)  # correct number of groups
+
+  # group-level prevalence should vary if intercepts differ
+  gm <- tapply(df$y, df$id, mean)
+  expect_length(gm, 20)
+  expect_gt(var(as.numeric(gm)), 0)
+})
