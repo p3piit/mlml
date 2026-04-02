@@ -41,7 +41,7 @@
 #'   \item{n_iter}{Number of inner-loop iterations performed in the last outer iteration.}
 #'   \item{train_ids}{Cluster identifiers used for training.}
 #'   \item{tol}{Tolerance used for convergence checks.}
-#'   \item{d_eta}{Numeric vector of RMS changes in the linear predictor \eqn{\eta} across outer iterations.}
+#'   \item{d_eta}{Numeric vector of RMS changes in the linear predictor \eqn{\eta} across all outer iterations.}
 #' }
 #'
 #' @references
