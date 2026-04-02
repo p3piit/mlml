@@ -64,9 +64,8 @@ A list with components:
 \item{converged_out}{Logical flag for outer-loop convergence.}
 \item{n_iter}{Number of inner-loop iterations performed in the last outer iteration.}
 \item{train_ids}{Cluster identifiers used for training.}
-\item{gll}{Generalized log-likelihood trace used for diagnostics.}
 \item{tol}{Tolerance used for convergence checks.}
-\item{time}{Elapsed runtime in seconds.}
+\item{d_eta}{Numeric vector of RMS changes in the linear predictor \eqn{\eta} across outer iterations.}
 }
 }
 \description{

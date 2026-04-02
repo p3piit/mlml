@@ -40,9 +40,8 @@
 #'   \item{converged_out}{Logical flag for outer-loop convergence.}
 #'   \item{n_iter}{Number of inner-loop iterations performed in the last outer iteration.}
 #'   \item{train_ids}{Cluster identifiers used for training.}
-#'   \item{gll}{Generalized log-likelihood trace used for diagnostics.}
 #'   \item{tol}{Tolerance used for convergence checks.}
-#'   \item{time}{Elapsed runtime in seconds.}
+#'   \item{d_eta}{Numeric vector of RMS changes in the linear predictor \eqn{\eta} across outer iterations.}
 #' }
 #'
 #' @references
@@ -122,6 +121,7 @@ fit_gmert_small    <- function(df,               # df: data.frame with columns
   Xdf <- data.table::as.data.table(
         df[setdiff(names(df), c(id, target))])
   
+  d_eta <- numeric(max_iter_out)                  # RMS change of eta per outer iteration
   time_start <- proc.time()                        # start timer
   ctrl <- rpart.control(cp = cp, 
                         minsplit = minsplit, 
@@ -197,7 +197,7 @@ fit_gmert_small    <- function(df,               # df: data.frame with columns
     
 
     # (Outer stopping rule – paper style)
-    d_eta <- sqrt(mean((eta - eta_old)^2))      # RMS change of eta
+    d_eta[M] <- sqrt(mean((eta - eta_old)^2))      # RMS change of eta
     if (d_eta < tol) {
       converged_out <- TRUE
       break
@@ -256,7 +256,8 @@ fit_gmert_small    <- function(df,               # df: data.frame with columns
     n_iter = n_iter,
     tol = tol,
     tree = final_tree,
-    train_ids = unique(df[[id]])
+    train_ids = unique(df[[id]]),
+    d_eta = d_eta[1:M]
   )
 
   rm(Xdf)
