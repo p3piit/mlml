@@ -257,7 +257,7 @@ fit_gmert_small    <- function(df,               # df: data.frame with columns
     tol = tol,
     tree = final_tree,
     train_ids = unique(df[[id]]),
-    d_eta = d_eta[1:M]
+    d_eta = d_eta
   )
 
   rm(Xdf)
