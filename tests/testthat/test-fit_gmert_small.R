@@ -62,6 +62,8 @@ test_that("fit_gmert_small returns the expected object structure (fast settings)
 
   # stored train ids
   expect_equal(length(fit$train_ids), length(unique(split$train$id)))
+
+  expect_true(is.numeric(fit$d_eta))
 })
 
 test_that("fit_gmert_small runs end-to-end and predicts without error", {
