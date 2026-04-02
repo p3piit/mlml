@@ -195,15 +195,15 @@ fit_gmert_small    <- function(df,               # df: data.frame with columns
     eta <- fhat + zb                            # recompute linear predictor
     mu <- pmin(pmax(plogis(eta), 10e-15), 1 - 1e-15)            # updated conditional means (capped below 1)
     
+    M <- M + 1L
 
     # (Outer stopping rule – paper style)
     d_eta[M] <- sqrt(mean((eta - eta_old)^2))      # RMS change of eta
-    if (d_eta < tol) {
+    if (d_eta[M] < tol) {
       converged_out <- TRUE
       break
     }
 
-    M <- M + 1L
     if (M >= max_iter_out) {                    # guard against outer non-convergence
       converged_out <- FALSE
       message(sprintf("WARNING: the PQL algorithm did not converge in %d iterations.", max_iter_out))
