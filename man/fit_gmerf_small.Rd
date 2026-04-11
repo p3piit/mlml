@@ -112,9 +112,11 @@ Pellagatti, Massimo, Chiara Masci, Francesca Ieva, and Anna M. Paganoni. 2021.
 \code{\link{fit_gmert_small}} for the tree-based \eqn{A^{-1}} optimized variant.
 
 Other gmert: 
+\code{\link{fit_gmerf_cat}()},
 \code{\link{fit_gmert}()},
 \code{\link{fit_gmert_cat}()},
 \code{\link{fit_gmert_small}()},
+\code{\link{predict_gmerf_cat}()},
 \code{\link{predict_gmert}()},
 \code{\link{predict_gmert_cat}()},
 \code{\link{sim_data_gmert}()},
