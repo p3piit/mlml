@@ -28,11 +28,9 @@
 predict_gmert_cat <- function(fit,
                           new_df,
                           random_effect = "x1",
-                          id = "id",
-                          type = c("class", "prob", "eta")) {
+                          id = "id") {
 
-  type <- match.arg(type)
-
+  
   N_new <- nrow(new_df)
   K <- fit$K
   K1 <- K - 1L
@@ -66,21 +64,14 @@ predict_gmert_cat <- function(fit,
 
   eta <- fhat + add
 
-  if (type == "eta") {
-    return(eta)
-  }
-
   exp_eta <- exp(eta)
+  exp_eta[is.infinite(exp_eta)] <- 1e50
   denom <- 1 + rowSums(exp_eta)
 
   prob <- matrix(0, N_new, K)
   prob[, 1:K1] <- exp_eta / denom
   prob[, K] <- 1 / denom
   colnames(prob) <- fit$classes
-
-  if (type == "prob") {
-    return(prob)
-  }
 
   pred_idx <- max.col(prob, ties.method = "first")
   fit$classes[pred_idx]

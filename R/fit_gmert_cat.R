@@ -36,7 +36,7 @@
 #'
 #' @export
 #'
-fit_gmert_small <- function(df,
+fit_gmert_cat <- function(df,
                             id = "id",
                             target = "y",
                             random_effects = "x1",
@@ -264,6 +264,7 @@ fit_gmert_small <- function(df,
 
     # Convert eta to class probabilities mu via softmax with class K as reference
     exp_eta <- exp(eta)
+    exp_eta[is.infinite(exp_eta)] <- 1e50
     denom <- 1 + rowSums(exp_eta)
 
     mu <- matrix(0, N, K)
@@ -271,7 +272,7 @@ fit_gmert_small <- function(df,
     mu[, K] <- 1 / denom
 
     # Numerical safeguard
-    mu <- pmax(mu, 1e-15)
+    mu <- pmin(pmax(mu, 1e-15), 1 - 1e-15)
     mu <- mu / rowSums(mu)
 
     M <- M + 1L

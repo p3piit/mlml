@@ -59,24 +59,7 @@
 #'   \code{x1}, ..., \code{xP}. If \code{return_prob = TRUE}, the class
 #'   probabilities \code{prob_1}, ..., \code{prob_K} are also returned.
 #'
-#' @examples
-#' \dontrun{
-#' df <- gen_sim_cat(
-#'   n = 600,
-#'   n_groups = 30,
-#'   n_vars = 8,
-#'   n_random = 2,
-#'   K = 4,
-#'   rho = 0.3,
-#'   random_slope_sd = c(0.4, 0.6),
-#'   intercept_sd = 0.8,
-#'   intercept_slope_cor = c(0.1, -0.2),
-#'   slope_corr = 0.1,
-#'   seed = 42
-#' )
-#' head(df)
-#' }
-#'
+
 #' @importFrom MASS mvrnorm
 #' @export
 gen_sim_cat <- function(
@@ -181,7 +164,7 @@ gen_sim_cat <- function(
   Sigma_re[1, 1] <- intercept_sd^2
 
   if (n_random > 0L) {
-    Sigma_re[2:re_dim, 2:re_dim] <- diag(random_slope_sd^2)
+    Sigma_re[2:re_dim, 2:re_dim] <- diag(as.matrix(random_slope_sd^2))
 
     # intercept-slope covariances
     Sigma_re[1, 2:re_dim] <- intercept_slope_cor * intercept_sd * random_slope_sd
