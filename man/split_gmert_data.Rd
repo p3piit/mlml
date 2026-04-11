@@ -34,10 +34,14 @@ nrow(split$test)
 }
 \seealso{
 Other gmert: 
+\code{\link{fit_gmerf_cat}()},
 \code{\link{fit_gmerf_small}()},
 \code{\link{fit_gmert}()},
+\code{\link{fit_gmert_cat}()},
 \code{\link{fit_gmert_small}()},
+\code{\link{predict_gmerf_cat}()},
 \code{\link{predict_gmert}()},
+\code{\link{predict_gmert_cat}()},
 \code{\link{sim_data_gmert}()}
 }
 \concept{gmert}
