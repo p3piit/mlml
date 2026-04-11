@@ -42,7 +42,11 @@ predict_gmert_cat <- function(fit,
   }
 
   # random-effects design
-  Znew <- as.matrix(cbind(1, new_df[random_effect]))
+  if (is.null(random_effects)) {
+  Znew <- matrix(1, nrow = nrow(df), ncol = 1)
+} else {
+  Znew <- as.matrix(cbind(1, df[random_effects]))
+}
   q <- ncol(Znew)
 
   # random-effects contribution

@@ -80,7 +80,11 @@ fit_gmert_cat <- function(df,
   Y_oh[cbind(seq_len(N), y_int)] <- 1
 
   # Random-effects design matrix
+  if (is.null(random_effects)) {
+   Z <- matrix(1, nrow = nrow(df), ncol = 1)
+  }  else {
   Z <- as.matrix(cbind(1, df[random_effects]))
+  }
   q <- ncol(Z)
 
   # Fixed-effects data used by rpart
