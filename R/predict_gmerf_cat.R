@@ -1,12 +1,12 @@
 #'
-#' Predict categorical outcomes from a fitted GMERT model
+#' Predict categorical outcomes from a fitted GMERF model
 #'
 #' Generates cluster-aware predictions for new data using a fitted
-#' generalized mixed effects regression tree (GMERT) model. Predictions
-#' combine the fixed-effects regression tree component with estimated
+#' generalized mixed effects random forest (GMERF) model. Predictions
+#' combine the fixed-effects random forest component with estimated
 #' cluster-specific random effects when available.
 #'
-#' @param fit A fitted GMERT model object returned by \code{fit_gmert_small()}.
+#' @param fit A fitted GMERF model object returned by \code{fit_gmert_cat()}.
 #' @param new_df A data.frame containing the predictors and cluster identifiers.
 #' @param random_effect Character. Name of the random-effects covariate
 #'   (default: \code{"x1"}).
@@ -19,12 +19,9 @@
 #' @family gmert
 #'
 #' @export
-predict_gmert_cat <- function(fit,
-                          new_df,
-                          random_effect = "x1",
-                          id = "id") {
-
-  
+predict_gmerf_cat <- function(fit, 
+  new_df, 
+  random_effect = "x1", id = "id") {
   N_new <- nrow(new_df)
   K <- fit$K
   K1 <- K - 1L
@@ -32,15 +29,15 @@ predict_gmert_cat <- function(fit,
   # fixed part
   fhat <- matrix(0, N_new, K1)
   for (k in seq_len(K1)) {
-    fhat[, k] <- as.numeric(predict(fit$trees[[k]], newdata = new_df))
+    fhat[, k] <- as.numeric(predict(fit$forests[[k]], data = new_df)$predictions)
   }
 
   # random-effects design
   if (is.null(random_effect)) {
-  Znew <- matrix(1, nrow = nrow(new_df), ncol = 1)
-} else {
-  Znew <- as.matrix(cbind(1, new_df[random_effect]))
-}
+    Znew <- matrix(1, nrow = nrow(new_df), ncol = 1)
+  } else {
+    Znew <- as.matrix(cbind(1, new_df[random_effect]))
+  }
   q <- ncol(Znew)
 
   # random-effects contribution
