@@ -47,7 +47,7 @@ Ajnv_fun_cat <- function(G,        # G      : number of clusters
   # of the original error), safe_inv handles it here rather than
   # propagating NaN/Inf into every cluster loop.
   # ------------------------------------------------------------------
-  D_inv <- safe_inv(D)
+  Djnv <- safe_inv(D)
 
   for (g in seq_len(G)) {
     Zj <- Z[idx[[g]], , drop = FALSE]           # n_j x q
