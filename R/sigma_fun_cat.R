@@ -49,5 +49,5 @@ sigma_fun_cat <- function(N,
       sum(diag(Ainv[[g]] %*% crossprod(Zti, Wi %*% Zti)))
   }
 
-  rss_total / (N * K1)
+   max(rss_total / (N * K1), 1e-6)  # enforce a minimum variance to avoid numerical issues
 }

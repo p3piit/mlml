@@ -28,7 +28,26 @@ Ajnv_fun_cat <- function(G,        # G      : number of clusters
 ) {
   Ajnv_list <- vector("list", G)
 
-  Djnv <- solve(D)  # D^{-1} once
+    safe_inv <- function(M) {
+    M <- (M + t(M)) / 2                    # symmetrise: free, O(q^2)
+    rc <- rcond(M)                         # reciprocal condition: O(q^2)
+    if (is.finite(rc) && rc > 1e-10) {
+      return(solve(M))                     # fast path: O(q^3), no alloc
+    }
+    # slow path: triggered rarely, only when matrix is genuinely singular
+    eig    <- eigen(M, symmetric = TRUE)
+    evals  <- eig$values
+    tol_e  <- max(abs(evals)) * .Machine$double.eps^0.5
+    e_inv  <- ifelse(abs(evals) > tol_e, 1 / evals, 0)
+    eig$vectors %*% (e_inv * t(eig$vectors))  # avoids diag() allocation
+  }
+
+  # ------------------------------------------------------------------
+  # Invert D once. If D itself is ill-conditioned (the typical cause
+  # of the original error), safe_inv handles it here rather than
+  # propagating NaN/Inf into every cluster loop.
+  # ------------------------------------------------------------------
+  D_inv <- safe_inv(D)
 
   for (g in seq_len(G)) {
     Zj <- Z[idx[[g]], , drop = FALSE]           # n_j x q
