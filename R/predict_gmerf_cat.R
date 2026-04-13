@@ -69,10 +69,10 @@ predict_gmerf_cat <- function(fit,
   prob[, K] <- 1 / denom
   colnames(prob) <- fit$classes
 
-  pred_idx <- max.col(prob, ties.method = "first")
   if (prob_saved) {
-    return(list(predicted_classes = fit$classes[pred_idx], predicted_probabilities = prob))
+    return(prob)
   } else {
+    pred_idx <- max.col(prob, ties.method = "first")
     return(fit$classes[pred_idx])
   }
 }
