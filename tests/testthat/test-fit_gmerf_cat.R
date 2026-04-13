@@ -244,3 +244,45 @@ test_that("predict_gmerf_cat works with unseen clusters in new data", {
   expect_equal(length(pred), nrow(df_test))
   expect_true(all(pred %in% fit$classes))
 })
+
+test_that("fit_gmerf_cat with prob_saved = TRUE returns both classes and probabilities", {
+  df <- gen_sim_cat(
+    n = 150,
+    n_groups = 10,
+    n_vars = 5,
+    n_random = 1,
+    K = 3,
+    seed = 3
+  )
+
+  fit <- fit_gmerf_cat(
+    df = df,
+    id = "id",
+    target = "y",
+    random_effects = "x1",
+    max_iter_inn = 8,
+    max_iter_out = 8,
+    tol = 1e-4,
+    ntrees = 50,
+    sanity_checks = FALSE
+  )
+
+  result <- predict_gmerf_cat(
+    fit = fit,
+    new_df = df,
+    random_effect = "x1",
+    id = "id",
+    prob_saved = TRUE
+  )
+
+  expect_type(result, "list")
+  expect_true(all(c("predicted_classes", "predicted_probabilities") %in% names(result)))
+  
+  expect_equal(length(result$predicted_classes), nrow(df))
+  expect_true(all(result$predicted_classes %in% fit$classes))
+
+  expect_true(is.matrix(result$predicted_probabilities))
+  expect_equal(dim(result$predicted_probabilities), c(nrow(df), fit$K))
+  expect_true(all(result$predicted_probabilities >= 0 & result$predicted_probabilities <= 1))
+  expect_true(all(abs(rowSums(result$predicted_probabilities) - 1) < 1e-6))
+})

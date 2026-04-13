@@ -4,7 +4,13 @@
 \alias{predict_gmerf_cat}
 \title{Predict categorical outcomes from a fitted GMERF model}
 \usage{
-predict_gmerf_cat(fit, new_df, random_effect = "x1", id = "id")
+predict_gmerf_cat(
+  fit,
+  new_df,
+  random_effect = "x1",
+  id = "id",
+  prob_saved = FALSE
+)
 }
 \arguments{
 \item{fit}{A fitted GMERF model object returned by \code{fit_gmert_cat()}.}
@@ -16,9 +22,11 @@ predict_gmerf_cat(fit, new_df, random_effect = "x1", id = "id")
 
 \item{id}{Character. Name of the cluster identifier column
 (default: \code{"id"}).}
+
+\item{prob_saved}{Logic. If \code{TRUE}, the function will return a list containing both predicted classes and probabilities.}
 }
 \value{
-Returns a vector of predicted classes.
+Returns a vector of predicted classes or a list containing both predicted classes and probabilities if \code{prob_saved} is \code{TRUE}.
 }
 \description{
 Generates cluster-aware predictions for new data using a fitted
