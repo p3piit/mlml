@@ -56,15 +56,15 @@ gen_sim <- function(
   n = 1000,
   n_groups = 20,
   n_vars = 10,
-  n_random = 3,
-  rho = 0.3,
+  n_random = NULL,
+  rho = 0,                       # pairwise correlation for predictors (0 = independent, closer to 1 = more collinear)
   beta = NULL,
   mu = 0,                       # scalar or numeric vector length = n_vars
   random_slope_sd = 0.5,           # scalar or numeric vector length = n_random
   intercept_sd = 0.8,
   intercept_slope_cor = 0.1,       # scalar or numeric vector length = n_random, values in [-1,1]
   slope_corr = 0.1,                # optional: scalar (pairwise) or matrix for slope-slope correlations (default 0)
-  sigma = 1.0,
+  sigma = 0,
   seed = NULL,
   random_vars = NULL,
   intercept = 0                     # fixed intercept
@@ -86,7 +86,7 @@ gen_sim <- function(
     n_random <- length(random_vars)
   }
 
-  if (rho < 0 || rho >= 1) stop("rho must be in [0, 1)")
+  if (rho < 0 || rho > 1) stop("rho must be in [0, 1)")
   if (length(mu) == 1) mu <- rep(mu, n_vars)
   if (length(mu) != n_vars) stop("mu must be NULL, a scalar, or a numeric vector of length n_vars")
 

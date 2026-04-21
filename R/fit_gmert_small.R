@@ -84,7 +84,7 @@ fit_gmert_small    <- function(df,               # df: data.frame with columns
                                id = "id",      # cluster identifier column name
                                target = "y",        # response column name
                                random_effects = "x1",  # random effects design column names (intercept + slope on x1)
-                               max_iter_inn = 1000,  # maximum number of EM iterations (inner loop)
+                               max_iter_inn = 50,  # maximum number of EM iterations (inner loop)
                                max_iter_out = 1000,  # maximum number of PQL iterations (outer loop)
                                tol = 1e-6,           # convergence tolerance for both loops (Aitken or relative diff)
                                cp = 0.0,             # rpart complexity parameter (pruning threshold)
