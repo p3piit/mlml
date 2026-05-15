@@ -59,14 +59,17 @@ fit_gmert_cat <- function(df,
 
   y_raw <- df[[target]]
 
-  # Encode response as integer class labels 1..K
-  if (is.factor(y_raw)) {
-    classes <- levels(y_raw)
-    y_int <- as.integer(y_raw)
-  } else {
-    classes <- as.character(sort(unique(y_raw)))
-    y_int <- match(as.character(y_raw), classes)
+  # Ensure target is a factor and set the majority class as the reference (last) level
+  if (!is.factor(y_raw)) {
+    y_raw <- factor(y_raw)
   }
+  majority_class <- names(which.max(table(y_raw)))
+  new_levels <- c(setdiff(levels(y_raw), majority_class), majority_class)
+  y_raw <- factor(y_raw, levels = new_levels)
+
+  # Encode response as integer class labels 1..K
+  classes <- levels(y_raw)
+  y_int <- as.integer(y_raw)
 
   K  <- length(classes)
   K1 <- K - 1L

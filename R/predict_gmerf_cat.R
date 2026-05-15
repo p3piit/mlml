@@ -12,16 +12,17 @@
 #'   (default: \code{"x1"}).
 #' @param id Character. Name of the cluster identifier column
 #'   (default: \code{"id"}).
+#' @param prob_saved Logic. If \code{TRUE}, the function will return a list containing both predicted classes and probabilities.
 #'
 #' @return
-#' Returns a vector of predicted classes.
+#' Returns a vector of predicted classes or a list containing both predicted classes and probabilities if \code{prob_saved} is \code{TRUE}.
 #'
 #' @family gmert
 #'
 #' @export
 predict_gmerf_cat <- function(fit, 
   new_df, 
-  random_effect = "x1", id = "id") {
+  random_effect = "x1", id = "id", prob_saved = FALSE) {
   N_new <- nrow(new_df)
   K <- fit$K
   K1 <- K - 1L
@@ -68,6 +69,10 @@ predict_gmerf_cat <- function(fit,
   prob[, K] <- 1 / denom
   colnames(prob) <- fit$classes
 
-  pred_idx <- max.col(prob, ties.method = "first")
-  fit$classes[pred_idx]
+  if (prob_saved) {
+    return(prob)
+  } else {
+    pred_idx <- max.col(prob, ties.method = "first")
+    return(fit$classes[pred_idx])
+  }
 }
